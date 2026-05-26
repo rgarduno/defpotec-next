@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAdmin, State } from "../context/AdminContext";
+import ConfirmModal from "./ConfirmModal";
 
 const defaultStateForm = {
   name: "",
@@ -21,6 +22,8 @@ export default function CatalogTab() {
 
   const [stateForm, setStateForm] = useState(defaultStateForm);
   const [editingStateId, setEditingStateId] = useState("");
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [stateToDelete, setStateToDelete] = useState<State | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,14 +58,14 @@ export default function CatalogTab() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      
+
       {/* STATES MANAGEMENT */}
       <div className="flex flex-col gap-6">
         <div className="bg-[#111] border border-white/10 rounded-2xl p-6 shadow-xl">
           <h3 className="text-lg font-bold text-white mb-6 border-b border-white/5 pb-2">
             {editingStateId ? "Editar Estado de la República" : "Registrar Estado de la República"}
           </h3>
-          
+
           <form onSubmit={handleSubmit} className="flex gap-4 items-end">
             <div className="flex-1 flex flex-col gap-1">
               <label className="text-xs text-slate-400">Nombre del Estado</label>
@@ -143,7 +146,10 @@ export default function CatalogTab() {
                             ✏️
                           </button>
                           <button
-                            onClick={() => handleDeleteState(state.id)}
+                            onClick={() => {
+                              setStateToDelete(state);
+                              setIsConfirmOpen(true);
+                            }}
                             className="p-1.5 bg-[#9B0000]/10 hover:bg-[#9B0000] text-[#9B0000] hover:text-white rounded-lg transition-colors cursor-pointer"
                             title="Eliminar"
                           >
@@ -163,7 +169,7 @@ export default function CatalogTab() {
       {/* SCHEDULES, SERVICES AND SUBSCRIBERS INFO */}
       <div className="bg-[#111] border border-white/10 rounded-2xl p-6 shadow-xl flex flex-col gap-6">
         <h3 className="text-lg font-bold text-white mb-2 border-b border-white/5 pb-2">Catálogos Auxiliares</h3>
-        
+
         <div className="p-4 rounded-xl border border-white/10 bg-white/2">
           <h4 className="font-bold text-white mb-2 flex items-center gap-2">🕐 Plantillas de Horarios</h4>
           <ul className="flex flex-col gap-2 text-xs text-slate-400">
@@ -205,6 +211,20 @@ export default function CatalogTab() {
           </p>
         </div>
       </div>
+      <AnimatePresence>
+        {isConfirmOpen && stateToDelete && (
+          <ConfirmModal
+            isOpen={isConfirmOpen}
+            onClose={() => {
+              setIsConfirmOpen(false);
+              setStateToDelete(null);
+            }}
+            onConfirm={() => handleDeleteState(stateToDelete.id)}
+            title="Eliminar Estado"
+            message={`¿Deseas eliminar el estado "${stateToDelete.name}" del catálogo permanentemente?`}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

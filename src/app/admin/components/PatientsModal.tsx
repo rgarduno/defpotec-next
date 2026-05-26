@@ -1,8 +1,9 @@
 "use client";
 
-import React from "react";
-import { motion } from "framer-motion";
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAdmin, DayTrip } from "../context/AdminContext";
+import ConfirmModal from "./ConfirmModal";
 
 interface PatientsModalProps {
   isOpen: boolean;
@@ -12,6 +13,8 @@ interface PatientsModalProps {
 
 export default function PatientsModal({ isOpen, onClose, campaign }: PatientsModalProps) {
   const { foliosList, handleDeleteFolio } = useAdmin();
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [folioToDelete, setFolioToDelete] = useState<any | null>(null);
 
   if (!isOpen || !campaign) return null;
 
@@ -90,7 +93,10 @@ export default function PatientsModal({ isOpen, onClose, campaign }: PatientsMod
                         </td>
                         <td className="p-4 text-center">
                           <button
-                            onClick={() => handleDeleteFolio(folio.code || folio.id)}
+                            onClick={() => {
+                              setFolioToDelete(folio);
+                              setIsConfirmOpen(true);
+                            }}
                             className="p-1.5 bg-[#9B0000]/10 hover:bg-[#9B0000] text-[#9B0000] hover:text-white rounded-lg transition-colors cursor-pointer"
                             title="Eliminar cita permanentemente"
                           >
@@ -119,6 +125,21 @@ export default function PatientsModal({ isOpen, onClose, campaign }: PatientsMod
           </button>
         </div>
       </motion.div>
+
+      <AnimatePresence>
+        {isConfirmOpen && folioToDelete && (
+          <ConfirmModal
+            isOpen={isConfirmOpen}
+            onClose={() => {
+              setIsConfirmOpen(false);
+              setFolioToDelete(null);
+            }}
+            onConfirm={() => handleDeleteFolio(folioToDelete.code || folioToDelete.id)}
+            title="Eliminar Cita"
+            message={`¿Estás seguro de que quieres eliminar la cita con folio ${folioToDelete.code || folioToDelete.id} a nombre de "${folioToDelete.name}" permanentemente de esta jornada? Esta acción no se puede deshacer.`}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

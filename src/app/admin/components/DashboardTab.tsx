@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAdmin, DayTrip } from "../context/AdminContext";
 import CampaignModal from "./CampaignModal";
 import PatientsModal from "./PatientsModal";
+import ConfirmModal from "./ConfirmModal";
 
 export default function DashboardTab() {
   const {
@@ -23,6 +24,8 @@ export default function DashboardTab() {
   const [selectedCampaignForModal, setSelectedCampaignForModal] = useState<DayTrip | null>(null);
   const [selectedCampaignForPatients, setSelectedCampaignForPatients] = useState<DayTrip | null>(null);
   const [hoveredMonth, setHoveredMonth] = useState<number | null>(null);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [campaignToDelete, setCampaignToDelete] = useState<DayTrip | null>(null);
 
   // Derived metrics
   const activeCampaigns = campaigns.filter(
@@ -381,7 +384,10 @@ export default function DashboardTab() {
                           Activar
                         </button>
                         <button
-                          onClick={() => handleDeleteCampaign(camp.uuid)}
+                          onClick={() => {
+                            setCampaignToDelete(camp);
+                            setIsConfirmOpen(true);
+                          }}
                           className="p-1.5 bg-white/5 hover:bg-[#9B0000] rounded-lg text-slate-400 hover:text-white transition-colors cursor-pointer"
                           title="Eliminar"
                         >
@@ -420,6 +426,20 @@ export default function DashboardTab() {
               setSelectedCampaignForPatients(null);
             }}
             campaign={selectedCampaignForPatients}
+          />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {isConfirmOpen && campaignToDelete && (
+          <ConfirmModal
+            isOpen={isConfirmOpen}
+            onClose={() => {
+              setIsConfirmOpen(false);
+              setCampaignToDelete(null);
+            }}
+            onConfirm={() => handleDeleteCampaign(campaignToDelete.uuid)}
+            title="Eliminar Jornada"
+            message={`¿Estás seguro de que quieres eliminar la campaña "${campaignToDelete.place || campaignToDelete.title}" permanentemente? Esta acción no se puede deshacer.`}
           />
         )}
       </AnimatePresence>

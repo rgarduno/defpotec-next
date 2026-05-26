@@ -377,7 +377,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   };
 
   const handleDeleteCampaign = async (campaignId: string) => {
-    if (!confirm("¿Estás seguro de que quieres eliminar esta campaña permanentemente?")) return;
     try {
       await deleteDoc(doc(db, "dayTrip", campaignId));
       toast.success("Campaña eliminada.");
@@ -439,7 +438,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   };
 
   const handleDeleteContact = async (id: string) => {
-    if (!confirm("¿Deseas eliminar este contacto del directorio?")) return;
     try {
       await deleteDoc(doc(db, "contacts", id));
       toast.success("Contacto eliminado.");
@@ -488,7 +486,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   };
 
   const handleDeleteState = async (id: string) => {
-    if (!confirm("¿Deseas eliminar este estado del catálogo?")) return;
     try {
       await deleteDoc(doc(db, "states", id));
       toast.success("Estado eliminado.");
@@ -515,7 +512,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   };
 
   const handleDeleteFolio = async (folioCode: string) => {
-    if (!confirm(`¿Estás seguro de que quieres eliminar la cita con folio ${folioCode} permanentemente?`)) return;
     try {
       // 1. Delete from folios collection
       await deleteDoc(doc(db, "folios", folioCode));

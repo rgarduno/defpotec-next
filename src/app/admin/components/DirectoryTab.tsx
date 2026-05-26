@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAdmin, Contact } from "../context/AdminContext";
+import ConfirmModal from "./ConfirmModal";
 
 const defaultContactForm = {
   contactName: "",
@@ -23,6 +24,8 @@ export default function DirectoryTab() {
   
   const [contactForm, setContactForm] = useState(defaultContactForm);
   const [editingContactId, setEditingContactId] = useState("");
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [contactToDelete, setContactToDelete] = useState<Contact | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -264,7 +267,10 @@ export default function DirectoryTab() {
                           ✏️
                         </button>
                         <button
-                          onClick={() => handleDeleteContact(contact.id)}
+                          onClick={() => {
+                            setContactToDelete(contact);
+                            setIsConfirmOpen(true);
+                          }}
                           className="p-1.5 bg-[#9B0000]/10 hover:bg-[#9B0000] text-[#9B0000] hover:text-white rounded-lg transition-colors cursor-pointer"
                           title="Eliminar"
                         >
@@ -279,6 +285,20 @@ export default function DirectoryTab() {
           </table>
         </div>
       </div>
+      <AnimatePresence>
+        {isConfirmOpen && contactToDelete && (
+          <ConfirmModal
+            isOpen={isConfirmOpen}
+            onClose={() => {
+              setIsConfirmOpen(false);
+              setContactToDelete(null);
+            }}
+            onConfirm={() => handleDeleteContact(contactToDelete.id)}
+            title="Eliminar Contacto"
+            message={`¿Deseas eliminar el establecimiento "${contactToDelete.place || contactToDelete.contactName}" del directorio permanentemente?`}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

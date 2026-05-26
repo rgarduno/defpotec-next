@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAdmin } from "../context/AdminContext";
+import ConfirmModal from "./ConfirmModal";
 
 export default function AppointmentsTab() {
   const {
@@ -14,6 +15,8 @@ export default function AppointmentsTab() {
   } = useAdmin();
 
   const [folioSearch, setFolioSearch] = useState("");
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [folioToDelete, setFolioToDelete] = useState<any | null>(null);
 
   // Derived filtered lists
   const campaignsOfYear = campaigns.filter(c => c.year === selectedYear || c.endYear === selectedYear);
@@ -110,7 +113,10 @@ export default function AppointmentsTab() {
                           {folio.active ? "Completar" : "Reactivar"}
                         </button>
                         <button
-                          onClick={() => handleDeleteFolio(folio.code || folio.id)}
+                          onClick={() => {
+                            setFolioToDelete(folio);
+                            setIsConfirmOpen(true);
+                          }}
                           className="p-1.5 bg-[#9B0000]/10 hover:bg-[#9B0000] text-[#9B0000] hover:text-white rounded-lg transition-colors cursor-pointer"
                           title="Eliminar permanentemente"
                         >
@@ -126,6 +132,20 @@ export default function AppointmentsTab() {
         </div>
       </div>
 
+      <AnimatePresence>
+        {isConfirmOpen && folioToDelete && (
+          <ConfirmModal
+            isOpen={isConfirmOpen}
+            onClose={() => {
+              setIsConfirmOpen(false);
+              setFolioToDelete(null);
+            }}
+            onConfirm={() => handleDeleteFolio(folioToDelete.code || folioToDelete.id)}
+            title="Eliminar Cita"
+            message={`¿Estás seguro de que quieres eliminar la cita con folio ${folioToDelete.code || folioToDelete.id} a nombre de "${folioToDelete.name}" permanentemente? Esta acción no se puede deshacer.`}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
