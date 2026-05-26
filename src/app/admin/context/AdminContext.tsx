@@ -5,6 +5,7 @@ import { onAuthStateChanged, signOut, User as FirebaseUser } from "firebase/auth
 import { 
   collection, 
   getDocs, 
+  getDoc,
   doc, 
   setDoc,
   updateDoc, 
@@ -152,6 +153,8 @@ interface AdminContextType {
   handleDeleteState: (id: string) => Promise<void>;
   handleToggleFolioActive: (folio: Folio) => Promise<void>;
   handleDeleteFolio: (folioCode: string) => Promise<void>;
+  userProfile: any | null;
+  updateUserProfile: (name: string, lastname: string) => Promise<boolean>;
 }
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
@@ -162,6 +165,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [accessDenied, setAccessDenied] = useState(false);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [userProfile, setUserProfile] = useState<any | null>(null);
 
   // Data States
   const [campaigns, setCampaigns] = useState<DayTrip[]>([]);
@@ -181,6 +185,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         setLoading(false);
       } else {
         setCurrentUser(user);
+        await loadUserProfile(user.uid, user.email || "");
         await loadAllData();
         setLoading(false);
       }
@@ -261,6 +266,50 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       console.error("Error loading admin data:", err);
       toast.error("Error al cargar los datos del servidor.");
+    }
+  };
+
+  const loadUserProfile = async (uid: string, email: string) => {
+    try {
+      const docRef = doc(db, "users", uid);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        setUserProfile({ id: docSnap.id, ...docSnap.data() });
+      } else {
+        setUserProfile({
+          id: uid,
+          name: "Usuario",
+          lastname: "",
+          email: email,
+          userRole: "normal"
+        });
+      }
+    } catch (err) {
+      console.error("Error loading user profile:", err);
+    }
+  };
+
+  const updateUserProfile = async (name: string, lastname: string): Promise<boolean> => {
+    if (!currentUser) return false;
+    try {
+      const docRef = doc(db, "users", currentUser.uid);
+      await setDoc(docRef, {
+        name,
+        lastname
+      }, { merge: true });
+
+      setUserProfile((prev: any) => ({
+        ...prev,
+        name,
+        lastname
+      }));
+
+      toast.success("¡Perfil actualizado con éxito!");
+      return true;
+    } catch (err) {
+      console.error("Error updating profile:", err);
+      toast.error("Error al actualizar el perfil.");
+      return false;
     }
   };
 
@@ -558,7 +607,9 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         handleStateSubmit,
         handleDeleteState,
         handleToggleFolioActive,
-        handleDeleteFolio
+        handleDeleteFolio,
+        userProfile,
+        updateUserProfile
       }}
     >
       {children}

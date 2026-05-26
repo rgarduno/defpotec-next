@@ -61,6 +61,16 @@ export default function Sidebar() {
         >
           <span>🎟️</span> Control de Citas
         </Link>
+        <Link
+          href="/admin/perfil"
+          className={`w-max lg:w-full text-left px-4 py-3 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 shrink-0 ${
+            isActive("/admin/perfil")
+              ? "bg-[#006828] text-white shadow-[0_0_15px_rgba(0,104,40,0.4)]"
+              : "text-slate-400 hover:text-white hover:bg-white/5"
+          }`}
+        >
+          <span>👤</span> Mi Perfil
+        </Link>
       </nav>
 
       <div className="mt-auto hidden lg:flex flex-col gap-4 border-t border-white/5 pt-6 text-xs text-slate-500">
