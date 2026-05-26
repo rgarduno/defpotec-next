@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAdmin, DayTrip } from "../context/AdminContext";
 import ConfirmModal from "./ConfirmModal";
 import { useSortableData, SortIcon } from "../../../hooks/useSortableData";
+import { formatDateStr } from "../../../utils/dateFormatter";
 
 interface PatientsModalProps {
   isOpen: boolean;
@@ -41,7 +42,7 @@ export default function PatientsModal({ isOpen, onClose, campaign }: PatientsMod
               {campaign.place} ({campaign.municipality}, {campaign.state})
             </h3>
             <p className="text-xs text-slate-400 mt-0.5">
-              {campaign.title} | {campaign.date}
+              {campaign.title} | {formatDateStr(campaign.date)}
             </p>
           </div>
           <button

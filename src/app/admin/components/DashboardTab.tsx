@@ -7,6 +7,7 @@ import CampaignModal from "./CampaignModal";
 import PatientsModal from "./PatientsModal";
 import ConfirmModal from "./ConfirmModal";
 import { useSortableData, SortIcon } from "../../../hooks/useSortableData";
+import { formatDateStr } from "../../../utils/dateFormatter";
 
 export default function DashboardTab() {
   const {
@@ -295,7 +296,7 @@ export default function DashboardTab() {
                       {camp.municipality || "N/A"}, {camp.state}
                     </td>
                     <td className="p-4">{camp.place || "N/A"}</td>
-                    <td className="p-4 text-xs">{camp.date}</td>
+                    <td className="p-4 text-xs">{formatDateStr(camp.date)}</td>
                     <td className="p-4 text-xs text-slate-400">{camp.author}</td>
                     <td className="p-4 text-xs text-slate-400">{camp.time}</td>
                     <td className="p-4 text-center text-xs font-bold text-[#4ade80]">
@@ -375,7 +376,7 @@ export default function DashboardTab() {
                       {camp.municipality || "N/A"}, {camp.state}
                     </td>
                     <td className="p-4">{camp.place || "N/A"}</td>
-                    <td className="p-4 text-xs">{camp.date}</td>
+                    <td className="p-4 text-xs">{formatDateStr(camp.date)}</td>
                     <td className="p-4 text-xs">{camp.author}</td>
                     <td className="p-4 text-center text-xs font-bold text-slate-400">
                       👥 {foliosList.filter(f => f.dayTrip === camp.uuid).reduce((sum, f) => sum + (f.numberOfPatients || 1), 0)}
