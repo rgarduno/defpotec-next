@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAdmin } from "../context/AdminContext";
 import ConfirmModal from "./ConfirmModal";
+import { useSortableData, SortIcon } from "../../../hooks/useSortableData";
 
 export default function AppointmentsTab() {
   const {
@@ -37,6 +38,8 @@ export default function AppointmentsTab() {
     f.email?.toLowerCase().includes(folioSearch.toLowerCase())
   );
 
+  const { items: sortedFolios, requestSort, sortConfig } = useSortableData(filteredFolios);
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-6">
       
@@ -64,23 +67,33 @@ export default function AppointmentsTab() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-white/10 text-xs text-slate-400 uppercase tracking-widest bg-white/2">
-                <th className="p-4">Folio / Status</th>
-                <th className="p-4">Paciente</th>
-                <th className="p-4">Correo</th>
-                <th className="p-4">Celular</th>
-                <th className="p-4">ID Campaña</th>
+                <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSort("code")}>
+                  Folio / Status <SortIcon active={sortConfig?.key === "code"} direction={sortConfig?.direction || null} />
+                </th>
+                <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSort("name")}>
+                  Paciente <SortIcon active={sortConfig?.key === "name"} direction={sortConfig?.direction || null} />
+                </th>
+                <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSort("email")}>
+                  Correo <SortIcon active={sortConfig?.key === "email"} direction={sortConfig?.direction || null} />
+                </th>
+                <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSort("cellphone")}>
+                  Celular <SortIcon active={sortConfig?.key === "cellphone"} direction={sortConfig?.direction || null} />
+                </th>
+                <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSort("dayTrip")}>
+                  ID Campaña <SortIcon active={sortConfig?.key === "dayTrip"} direction={sortConfig?.direction || null} />
+                </th>
                 <th className="p-4 text-center">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {filteredFolios.length === 0 ? (
+              {sortedFolios.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="p-8 text-center text-slate-500 text-sm">
                     No se encontraron citas o folios registrados.
                   </td>
                 </tr>
               ) : (
-                filteredFolios.map((folio) => (
+                sortedFolios.map((folio) => (
                   <tr key={folio.id} className="border-b border-white/5 hover:bg-white/2 text-sm text-slate-300">
                     <td className="p-4">
                       <span className="font-mono text-base font-black text-[#4ade80] tracking-wider select-all">

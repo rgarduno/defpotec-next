@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAdmin, State } from "../context/AdminContext";
 import ConfirmModal from "./ConfirmModal";
+import { useSortableData, SortIcon } from "../../../hooks/useSortableData";
 
 const defaultStateForm = {
   name: "",
@@ -19,6 +20,8 @@ export default function CatalogTab() {
     handleStateSubmit,
     handleDeleteState
   } = useAdmin();
+
+  const { items: sortedStates, requestSort, sortConfig } = useSortableData(statesList);
 
   const [stateForm, setStateForm] = useState(defaultStateForm);
   const [editingStateId, setEditingStateId] = useState("");
@@ -117,21 +120,27 @@ export default function CatalogTab() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-white/10 text-xs text-slate-400 uppercase tracking-widest bg-white/2">
-                  <th className="p-4">UID</th>
-                  <th className="p-4">Nombre</th>
-                  <th className="p-4">Capital</th>
+                  <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSort("id")}>
+                    UID <SortIcon active={sortConfig?.key === "id"} direction={sortConfig?.direction || null} />
+                  </th>
+                  <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSort("name")}>
+                    Nombre <SortIcon active={sortConfig?.key === "name"} direction={sortConfig?.direction || null} />
+                  </th>
+                  <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSort("capital")}>
+                    Capital <SortIcon active={sortConfig?.key === "capital"} direction={sortConfig?.direction || null} />
+                  </th>
                   <th className="p-4 text-center">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {statesList.length === 0 ? (
+                {sortedStates.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="p-8 text-center text-slate-500 text-sm">
                       No hay estados registrados.
                     </td>
                   </tr>
                 ) : (
-                  statesList.map((state) => (
+                  sortedStates.map((state) => (
                     <tr key={state.id} className="border-b border-white/5 hover:bg-white/2 text-sm text-slate-300">
                       <td className="p-4 text-xs font-mono text-slate-500 max-w-[120px] truncate">{state.id}</td>
                       <td className="p-4 font-semibold text-white">{state.name}</td>

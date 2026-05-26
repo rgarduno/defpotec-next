@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAdmin, Contact } from "../context/AdminContext";
 import ConfirmModal from "./ConfirmModal";
+import { useSortableData, SortIcon } from "../../../hooks/useSortableData";
 
 const defaultContactForm = {
   contactName: "",
@@ -22,6 +23,8 @@ const defaultContactForm = {
 export default function DirectoryTab() {
   const { contacts, handleContactSubmit, handleDeleteContact } = useAdmin();
   
+  const { items: sortedContacts, requestSort, sortConfig } = useSortableData(contacts);
+
   const [contactForm, setContactForm] = useState(defaultContactForm);
   const [editingContactId, setEditingContactId] = useState("");
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
@@ -226,22 +229,30 @@ export default function DirectoryTab() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-white/10 text-xs text-slate-400 uppercase tracking-widest bg-white/2">
-                <th className="p-4">Establecimiento / Contacto</th>
-                <th className="p-4">Ubicación</th>
-                <th className="p-4">Contacto / Tel</th>
-                <th className="p-4">Dirección</th>
+                <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSort("place")}>
+                  Establecimiento / Contacto <SortIcon active={sortConfig?.key === "place"} direction={sortConfig?.direction || null} />
+                </th>
+                <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSort("selectedState")}>
+                  Ubicación <SortIcon active={sortConfig?.key === "selectedState"} direction={sortConfig?.direction || null} />
+                </th>
+                <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSort("telephone")}>
+                  Contacto / Tel <SortIcon active={sortConfig?.key === "telephone"} direction={sortConfig?.direction || null} />
+                </th>
+                <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSort("address")}>
+                  Dirección <SortIcon active={sortConfig?.key === "address"} direction={sortConfig?.direction || null} />
+                </th>
                 <th className="p-4 text-center">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {contacts.length === 0 ? (
+              {sortedContacts.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="p-8 text-center text-slate-500 text-sm">
                     No hay contactos en el directorio aún.
                   </td>
                 </tr>
               ) : (
-                contacts.map((contact) => (
+                sortedContacts.map((contact) => (
                   <tr key={contact.id} className="border-b border-white/5 hover:bg-white/2 text-sm text-slate-300">
                     <td className="p-4">
                       <p className="font-semibold text-white">{contact.place}</p>

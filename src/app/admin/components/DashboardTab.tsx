@@ -6,6 +6,7 @@ import { useAdmin, DayTrip } from "../context/AdminContext";
 import CampaignModal from "./CampaignModal";
 import PatientsModal from "./PatientsModal";
 import ConfirmModal from "./ConfirmModal";
+import { useSortableData, SortIcon } from "../../../hooks/useSortableData";
 
 export default function DashboardTab() {
   const {
@@ -34,6 +35,9 @@ export default function DashboardTab() {
   const inactiveCampaigns = campaigns.filter(
     c => c.status === "inactive" && (c.year === selectedYear || c.endYear === selectedYear)
   );
+
+  const { items: sortedActiveCampaigns, requestSort: requestSortActive, sortConfig: sortConfigActive } = useSortableData(activeCampaigns);
+  const { items: sortedInactiveCampaigns, requestSort: requestSortInactive, sortConfig: sortConfigInactive } = useSortableData(inactiveCampaigns);
 
   const campaignsOfYear = campaigns.filter(
     c => c.year === selectedYear || c.endYear === selectedYear
@@ -258,24 +262,34 @@ export default function DashboardTab() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-white/10 text-xs text-slate-400 uppercase tracking-widest bg-white/2">
-                <th className="p-4">Municipio / Estado</th>
-                <th className="p-4">Establecimiento</th>
-                <th className="p-4">Fecha</th>
-                <th className="p-4">Responsable</th>
-                <th className="p-4">Horario</th>
+                <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSortActive("state")}>
+                  Municipio / Estado <SortIcon active={sortConfigActive?.key === "state"} direction={sortConfigActive?.direction || null} />
+                </th>
+                <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSortActive("place")}>
+                  Establecimiento <SortIcon active={sortConfigActive?.key === "place"} direction={sortConfigActive?.direction || null} />
+                </th>
+                <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSortActive("date")}>
+                  Fecha <SortIcon active={sortConfigActive?.key === "date"} direction={sortConfigActive?.direction || null} />
+                </th>
+                <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSortActive("author")}>
+                  Responsable <SortIcon active={sortConfigActive?.key === "author"} direction={sortConfigActive?.direction || null} />
+                </th>
+                <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSortActive("time")}>
+                  Horario <SortIcon active={sortConfigActive?.key === "time"} direction={sortConfigActive?.direction || null} />
+                </th>
                 <th className="p-4 text-center">Pacientes</th>
                 <th className="p-4 text-center">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {activeCampaigns.length === 0 ? (
+              {sortedActiveCampaigns.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="p-8 text-center text-slate-500 text-sm">
                     No hay campañas activas registradas.
                   </td>
                 </tr>
               ) : (
-                activeCampaigns.map((camp) => (
+                sortedActiveCampaigns.map((camp) => (
                   <tr key={camp.uuid} className="border-b border-white/5 hover:bg-white/2 text-sm text-slate-300">
                     <td className="p-4 font-semibold text-white">
                       {camp.municipality || "N/A"}, {camp.state}
@@ -331,23 +345,31 @@ export default function DashboardTab() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-white/10 text-xs text-slate-400 uppercase tracking-widest bg-white/2">
-                <th className="p-4">Municipio / Estado</th>
-                <th className="p-4">Establecimiento</th>
-                <th className="p-4">Fecha</th>
-                <th className="p-4">Responsable</th>
+                <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSortInactive("state")}>
+                  Municipio / Estado <SortIcon active={sortConfigInactive?.key === "state"} direction={sortConfigInactive?.direction || null} />
+                </th>
+                <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSortInactive("place")}>
+                  Establecimiento <SortIcon active={sortConfigInactive?.key === "place"} direction={sortConfigInactive?.direction || null} />
+                </th>
+                <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSortInactive("date")}>
+                  Fecha <SortIcon active={sortConfigInactive?.key === "date"} direction={sortConfigInactive?.direction || null} />
+                </th>
+                <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSortInactive("author")}>
+                  Responsable <SortIcon active={sortConfigInactive?.key === "author"} direction={sortConfigInactive?.direction || null} />
+                </th>
                 <th className="p-4 text-center">Pacientes</th>
                 <th className="p-4 text-center">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {inactiveCampaigns.length === 0 ? (
+              {sortedInactiveCampaigns.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="p-8 text-center text-slate-500 text-sm">
                     No hay campañas inactivas en el historial.
                   </td>
                 </tr>
               ) : (
-                inactiveCampaigns.map((camp) => (
+                sortedInactiveCampaigns.map((camp) => (
                   <tr key={camp.uuid} className="border-b border-white/5 hover:bg-white/2 text-sm text-slate-400">
                     <td className="p-4">
                       {camp.municipality || "N/A"}, {camp.state}
