@@ -34,10 +34,17 @@ export function useSortableData<T>(items: T[], config: SortConfig<T> | null = nu
           bValue = (bValue.toLowerCase() as any);
         }
 
-        if (aValue < bValue || aValue === undefined) {
+        if (aValue === null || aValue === undefined) {
           return sortConfig.direction === "asc" ? -1 : 1;
         }
-        if (aValue > bValue || bValue === undefined) {
+        if (bValue === null || bValue === undefined) {
+          return sortConfig.direction === "asc" ? 1 : -1;
+        }
+
+        if (aValue < bValue) {
+          return sortConfig.direction === "asc" ? -1 : 1;
+        }
+        if (aValue > bValue) {
           return sortConfig.direction === "asc" ? 1 : -1;
         }
         return 0;
