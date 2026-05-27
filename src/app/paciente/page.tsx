@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { onAuthStateChanged, signOut, User } from "firebase/auth";
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import { onAuthStateChanged, signOut, User, updateProfile } from "firebase/auth";
+import { collection, query, where, getDocs, doc, getDoc, updateDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/firebase/config";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -28,6 +28,17 @@ export default function PacientePage() {
   const [user, setUser] = useState<User | null>(null);
   const [appointments, setAppointments] = useState<PatientAppointment[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Link folio state
+  const [folioCodeToLink, setFolioCodeToLink] = useState("");
+  const [linking, setLinking] = useState(false);
+
+  // Profile state
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [profileName, setProfileName] = useState("");
+  const [profileLastname, setProfileLastname] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
+
   const router = useRouter();
 
   useEffect(() => {
@@ -82,6 +93,89 @@ export default function PacientePage() {
     }
   };
 
+  const handleLinkFolio = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!folioCodeToLink) return toast.error("Ingresa el código de tu folio.");
+    setLinking(true);
+    try {
+      // Buscar en folios
+      const folioRef = doc(db, "folios", folioCodeToLink);
+      const folioSnap = await getDoc(folioRef);
+      if (!folioSnap.exists()) {
+        toast.error("Folio no encontrado. Verifica el código.");
+        setLinking(false);
+        return;
+      }
+      
+      // Actualizar folio con el nuevo email
+      await updateDoc(folioRef, {
+        email: user?.email
+      });
+
+      // Actualizar appointments con el nuevo email
+      const q = query(collection(db, "appointments"), where("folioCode", "==", folioCodeToLink));
+      const querySnapshot = await getDocs(q);
+      const updatePromises: Promise<void>[] = [];
+      querySnapshot.forEach((docSnap) => {
+        updatePromises.push(updateDoc(doc(db, "appointments", docSnap.id), {
+          email: user?.email
+        }));
+      });
+      await Promise.all(updatePromises);
+
+      toast.success("¡Folio vinculado con éxito!");
+      setFolioCodeToLink("");
+      await fetchAppointments(user?.email || "");
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al vincular el folio.");
+    } finally {
+      setLinking(false);
+    }
+  };
+
+  const openProfile = async () => {
+    setIsProfileOpen(true);
+    setProfileName(user?.displayName || "");
+    if (user?.uid) {
+      try {
+        const uSnap = await getDoc(doc(db, "users", user.uid));
+        if (uSnap.exists()) {
+          setProfileName(uSnap.data().name || user?.displayName || "");
+          setProfileLastname(uSnap.data().lastname || "");
+        }
+      } catch (err) {
+        console.error("Error loading profile data", err);
+      }
+    }
+  };
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profileName) return toast.error("El nombre es requerido.");
+    setSavingProfile(true);
+    try {
+      if (user) {
+        await updateProfile(user, { displayName: profileName });
+        await setDoc(doc(db, "users", user.uid), {
+          name: profileName,
+          lastname: profileLastname,
+          email: user.email,
+        }, { merge: true });
+        
+        // Update local user state
+        setUser({ ...user, displayName: profileName } as User);
+        toast.success("Perfil actualizado exitosamente.");
+        setIsProfileOpen(false);
+      }
+    } catch (err) {
+      console.error("Error saving profile", err);
+      toast.error("Error al actualizar el perfil.");
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
   if (loading || !user) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] text-white flex items-center justify-center">
@@ -107,12 +201,20 @@ export default function PacientePage() {
               Aquí puedes ver los pases digitales de tus citas visuales registradas con tu cuenta <strong className="text-white">{user.email}</strong>.
             </p>
           </div>
-          <button
-            onClick={handleLogout}
-            className="px-6 py-2.5 border border-white/10 hover:border-[#9B0000] hover:bg-[#9B0000]/10 rounded-full text-sm font-semibold text-slate-300 hover:text-white transition-all shrink-0"
-          >
-            Cerrar Sesión
-          </button>
+          <div className="flex gap-3 shrink-0">
+            <button
+              onClick={openProfile}
+              className="px-6 py-2.5 border border-white/10 hover:border-[#006828] hover:bg-[#006828]/10 rounded-full text-sm font-semibold text-white transition-all"
+            >
+              👤 Mi Perfil
+            </button>
+            <button
+              onClick={handleLogout}
+              className="px-6 py-2.5 border border-white/10 hover:border-[#9B0000] hover:bg-[#9B0000]/10 rounded-full text-sm font-semibold text-slate-300 hover:text-white transition-all"
+            >
+              Cerrar Sesión
+            </button>
+          </div>
         </div>
 
         {/* Citas List */}
@@ -125,14 +227,39 @@ export default function PacientePage() {
             <div className="bg-[#161616]/60 border border-dashed border-white/10 rounded-3xl p-12 text-center flex flex-col items-center gap-4">
               <span className="text-5xl">👁️</span>
               <h3 className="text-xl font-bold text-slate-300">No tienes citas agendadas</h3>
-              <p className="text-slate-500 text-sm max-w-sm">
-                No encontramos registros de citas asociados a tu correo electrónico en este momento.
+              <p className="text-slate-500 text-sm max-w-sm mb-2">
+                No encontramos registros de citas asociados a tu correo electrónico en este momento. Si ya tienes un código de folio físico, vincúlalo a continuación:
               </p>
+              
+              <form onSubmit={handleLinkFolio} className="flex flex-col md:flex-row gap-2 w-full max-w-md">
+                <input 
+                  type="text" 
+                  placeholder="Ej. DEF-1234" 
+                  value={folioCodeToLink}
+                  onChange={(e) => setFolioCodeToLink(e.target.value.toUpperCase())}
+                  className="flex-1 bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-[#006828] transition-colors font-mono uppercase"
+                  required
+                />
+                <button 
+                  type="submit"
+                  disabled={linking}
+                  className="px-6 py-3 bg-[#0a0a0a] border border-white/10 hover:border-[#006828] hover:bg-[#006828]/20 disabled:opacity-50 text-white rounded-xl font-bold transition-all text-sm shrink-0 whitespace-nowrap"
+                >
+                  {linking ? "Vinculando..." : "Vincular Folio"}
+                </button>
+              </form>
+
+              <div className="flex items-center gap-4 w-full max-w-md my-2">
+                <div className="h-px bg-white/10 flex-1" />
+                <span className="text-xs text-slate-500 font-medium">O</span>
+                <div className="h-px bg-white/10 flex-1" />
+              </div>
+
               <Link
                 href="/jornadas"
-                className="mt-2 px-6 py-3 bg-[#006828] hover:bg-[#00501f] text-white rounded-full font-bold transition-all text-sm shadow-md"
+                className="px-8 py-3 bg-[#006828] hover:bg-[#00501f] text-white rounded-full font-bold transition-all text-sm shadow-md"
               >
-                Ver Campañas Activas
+                Agendar Nueva Cita
               </Link>
             </div>
           ) : (
@@ -197,6 +324,65 @@ export default function PacientePage() {
           )}
         </div>
       </main>
+
+      {/* Profile Modal */}
+      {isProfileOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/70 backdrop-blur-sm font-sans">
+          <div className="bg-[#161616] border border-white/10 w-full max-w-md rounded-3xl overflow-hidden shadow-2xl relative">
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-[#006828]" />
+            <div className="p-6 md:p-8">
+              <h3 className="text-xl font-bold text-white mb-6">Mi Perfil</h3>
+              <form onSubmit={handleSaveProfile} className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs text-slate-400 ml-1">Nombre</label>
+                  <input
+                    type="text"
+                    value={profileName}
+                    onChange={(e) => setProfileName(e.target.value)}
+                    className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#006828] transition-colors"
+                    required
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs text-slate-400 ml-1">Apellidos (Opcional)</label>
+                  <input
+                    type="text"
+                    value={profileLastname}
+                    onChange={(e) => setProfileLastname(e.target.value)}
+                    className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#006828] transition-colors"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs text-slate-400 ml-1">Correo Electrónico (No modificable)</label>
+                  <input
+                    type="email"
+                    value={user?.email || ""}
+                    disabled
+                    className="w-full bg-[#0a0a0a] border border-white/5 rounded-xl px-4 py-3 text-slate-500 cursor-not-allowed"
+                  />
+                </div>
+                
+                <div className="flex gap-3 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => setIsProfileOpen(false)}
+                    className="flex-1 py-3 border border-white/10 hover:bg-white/5 text-white rounded-xl font-bold transition-all"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingProfile}
+                    className="flex-1 py-3 bg-[#006828] hover:bg-[#00501f] disabled:opacity-50 text-white rounded-xl font-bold transition-all shadow-md"
+                  >
+                    {savingProfile ? "Guardando..." : "Guardar"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -7,9 +7,11 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  updateProfile
 } from "firebase/auth";
-import { auth } from "@/firebase/config";
+import { auth, db } from "@/firebase/config";
+import { doc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast, { Toaster } from "react-hot-toast";
@@ -24,6 +26,7 @@ export default function LoginPage() {
   
   // Auth state
   const [view, setView] = useState<ViewState>("login");
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -94,12 +97,25 @@ export default function LoginPage() {
 
   const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) return toast.error("Ingresa correo y contraseña.");
+    if (!name || !email || !password) return toast.error("Ingresa nombre, correo y contraseña.");
     if (password.length < 6) return toast.error("La contraseña debe tener al menos 6 caracteres.");
 
     setLoading(true);
     try {
       const result = await createUserWithEmailAndPassword(auth, email, password);
+      
+      // Update Auth Profile
+      await updateProfile(result.user, {
+        displayName: name
+      });
+
+      // Save user to Firestore
+      await setDoc(doc(db, "users", result.user.uid), {
+        name,
+        email,
+        userRole: "normal"
+      });
+
       routeUser(result.user.email);
     } catch (error: any) {
       console.error("Signup error:", error);
@@ -181,6 +197,20 @@ export default function LoginPage() {
           className="flex flex-col gap-4 mb-6" 
           onSubmit={view === "login" ? handleEmailLogin : view === "signup" ? handleEmailSignUp : handlePasswordReset}
         >
+          {view === "signup" && (
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs text-slate-400 ml-1">Nombre Completo</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Juan Pérez"
+                className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-[#006828] transition-colors"
+                required
+              />
+            </div>
+          )}
+
           <div className="flex flex-col gap-1.5">
             <label className="text-xs text-slate-400 ml-1">Correo Electrónico</label>
             <input
