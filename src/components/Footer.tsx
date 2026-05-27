@@ -1,12 +1,43 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
+import { collection, doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "@/firebase/config";
+import toast, { Toaster } from "react-hot-toast";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const [email, setEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+
+    setSubmitting(true);
+    try {
+      const newsLettersRef = collection(db, "newsLetters");
+      const newDocRef = doc(newsLettersRef);
+      await setDoc(newDocRef, {
+        newsLetterEmail: email.trim().toLowerCase(),
+        uuid: newDocRef.id,
+        createdAt: serverTimestamp()
+      });
+
+      toast.success("¡Gracias por suscribirte a nuestro boletín!");
+      setEmail("");
+    } catch (err) {
+      console.error("Error subscribing to newsletter:", err);
+      toast.error("Ocurrió un error. Por favor intenta de nuevo.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <footer className="w-full bg-[#0a0a0a] text-slate-400 border-t border-white/10 pt-16 pb-8 px-6 md:px-12 mt-auto">
+      <Toaster position="bottom-right" toastOptions={{ duration: 4000 }} />
       <div className="container mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
         
         {/* Columna 1: Branding */}
@@ -92,22 +123,49 @@ export default function Footer() {
           </ul>
         </div>
 
-        {/* Columna 4: Horarios */}
-        <div className="flex flex-col gap-4">
-          <h4 className="text-white font-bold text-sm uppercase tracking-wider">Horarios</h4>
-          <div className="flex flex-col gap-2 text-sm text-slate-500">
-            <div className="flex justify-between border-b border-white/5 pb-1">
-              <span>Lunes - Viernes:</span>
-              <span className="text-slate-300 font-medium">9:00 - 18:00</span>
+        {/* Columna 4: Horarios y Boletín */}
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-3">
+            <h4 className="text-white font-bold text-sm uppercase tracking-wider">Horarios</h4>
+            <div className="flex flex-col gap-2 text-sm text-slate-500">
+              <div className="flex justify-between border-b border-white/5 pb-1">
+                <span>Lunes - Viernes:</span>
+                <span className="text-slate-300 font-medium">9:00 - 18:00</span>
+              </div>
+              <div className="flex justify-between border-b border-white/5 pb-1">
+                <span>Sábado:</span>
+                <span className="text-slate-300 font-medium">10:00 - 14:00</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Domingo:</span>
+                <span className="text-slate-400">Cerrado</span>
+              </div>
             </div>
-            <div className="flex justify-between border-b border-white/5 pb-1">
-              <span>Sábado:</span>
-              <span className="text-slate-300 font-medium">10:00 - 14:00</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Domingo:</span>
-              <span className="text-slate-400">Cerrado</span>
-            </div>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <h4 className="text-white font-bold text-sm uppercase tracking-wider">Boletín Informativo</h4>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Suscríbete para recibir notificaciones sobre nuestras próximas jornadas visuales.
+            </p>
+            <form onSubmit={handleSubscribe} className="flex gap-2 mt-1">
+              <input
+                type="email"
+                placeholder="Tu correo electrónico"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white placeholder-slate-600 text-xs focus:outline-none focus:border-[#006828]"
+                required
+                disabled={submitting}
+              />
+              <button
+                type="submit"
+                disabled={submitting}
+                className="bg-[#006828] hover:bg-[#00501f] disabled:opacity-50 text-white px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-[0_0_10px_rgba(0,104,40,0.2)] whitespace-nowrap"
+              >
+                {submitting ? "..." : "Unirse"}
+              </button>
+            </form>
           </div>
         </div>
 

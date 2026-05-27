@@ -64,12 +64,7 @@ export default function DashboardTab() {
       setUsersCount(usersData.length);
 
       // 3. Count Subscribers/Newsletters
-      let subsColl = "newsletters";
-      const newsSnap = await getDocs(query(collection(db, "newsletters"), limit(1)));
-      if (newsSnap.empty) {
-        subsColl = "subscribers";
-      }
-      const subsCountSnap = await getCountFromServer(collection(db, subsColl));
+      const subsCountSnap = await getCountFromServer(collection(db, "newsLetters"));
       setSubscribersCount(subsCountSnap.data().count);
 
       // 4. Load Folios Count and Monthly Distribution (Chart 1)

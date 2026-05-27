@@ -70,14 +70,9 @@ export default function CatalogTab() {
     }
   };
 
-  const getSubscribersCollectionName = async (): Promise<string> => {
-    const newsSnap = await getDocs(query(collection(db, "newsletters"), limit(1)));
-    return newsSnap.empty ? "subscribers" : "newsletters";
-  };
-
   const fetchSubscribersPage = async (page: number, direction: "next" | "prev" | "init" = "init") => {
     try {
-      const collName = await getSubscribersCollectionName();
+      const collName = "newsLetters";
       
       // Count total subscribers
       const countSnap = await getCountFromServer(collection(db, collName));
