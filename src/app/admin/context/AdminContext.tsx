@@ -12,7 +12,8 @@ import {
   deleteDoc, 
   serverTimestamp,
   query,
-  where
+  where,
+  onSnapshot
 } from "firebase/firestore";
 import { auth, db } from "@/firebase/config";
 import { useRouter } from "next/navigation";
@@ -109,7 +110,6 @@ interface AdminContextType {
   subscribersList: any[];
   selectedYear: number;
   setSelectedYear: (year: number) => void;
-  loadAllData: () => Promise<void>;
   handleLogout: () => Promise<void>;
   handleCampaignSubmit: (
     form: {
@@ -177,7 +177,9 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const [subscribersList, setSubscribersList] = useState<any[]>([]);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    let unsubscribes: any[] = [];
+    
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (!user) {
         router.replace("/login");
       } else if (!ADMIN_EMAILS.includes(user.email || "")) {
@@ -186,87 +188,112 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       } else {
         setCurrentUser(user);
         await loadUserProfile(user.uid, user.email || "");
-        await loadAllData();
+        unsubscribes = setupRealtimeListeners();
         setLoading(false);
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribeAuth();
+      unsubscribes.forEach(unsub => unsub());
+    };
   }, [router]);
 
-  const loadAllData = async () => {
-    try {
-      // 1. Fetch campaigns (dayTrip)
-      const campaignSnap = await getDocs(collection(db, "dayTrip"));
-      const campaignData: DayTrip[] = [];
-      campaignSnap.forEach((docSnap) => {
-        campaignData.push({ uuid: docSnap.id, ...docSnap.data() } as DayTrip);
-      });
-      setCampaigns(campaignData);
+  const setupRealtimeListeners = () => {
+    const unsubs: any[] = [];
 
-      // 2. Fetch contacts
-      const contactSnap = await getDocs(collection(db, "contacts"));
-      const contactData: Contact[] = [];
-      contactSnap.forEach((docSnap) => {
-        contactData.push({ id: docSnap.id, ...docSnap.data() } as Contact);
-      });
-      setContacts(contactData);
-
-      // 3. Fetch users from DB
-      const userSnap = await getDocs(collection(db, "users"));
-      const userData: DBUser[] = [];
-      userSnap.forEach((docSnap) => {
-        userData.push({ id: docSnap.id, ...docSnap.data() } as DBUser);
-      });
-      setDbUsers(userData);
-
-      // 4. Fetch schedules
-      const scheduleSnap = await getDocs(collection(db, "schedules"));
-      const scheduleData: Schedule[] = [];
-      scheduleSnap.forEach((docSnap) => {
-        scheduleData.push({ id: docSnap.id, ...docSnap.data() } as Schedule);
-      });
-      setSchedules(scheduleData);
-
-      // 5. Fetch states
-      const stateSnap = await getDocs(collection(db, "states"));
-      const stateData: State[] = [];
-      stateSnap.forEach((docSnap) => {
-        stateData.push({ id: docSnap.id, ...docSnap.data() } as State);
-      });
-      setStatesList(stateData);
-
-      // 6. Fetch folios
-      const folioSnap = await getDocs(collection(db, "folios"));
-      const folioData: Folio[] = [];
-      folioSnap.forEach((docSnap) => {
-        folioData.push({ id: docSnap.id, ...docSnap.data() } as Folio);
-      });
-      setFoliosList(folioData);
-
-      // 7. Fetch newsletters/subscribers
-      const subsData: any[] = [];
-      try {
-        const newsSnap = await getDocs(collection(db, "newsletters"));
-        newsSnap.forEach((docSnap) => {
-          subsData.push({ id: docSnap.id, ...docSnap.data() });
+    // 1. Fetch campaigns (dayTrip)
+    unsubs.push(
+      onSnapshot(collection(db, "dayTrip"), (snapshot) => {
+        const campaignData: DayTrip[] = [];
+        snapshot.forEach((docSnap) => {
+          campaignData.push({ uuid: docSnap.id, ...docSnap.data() } as DayTrip);
         });
-      } catch (e) {
-        console.warn("newsletters collection not found, trying subscribers...", e);
-        try {
-          const subSnap = await getDocs(collection(db, "subscribers"));
-          subSnap.forEach((docSnap) => {
+        setCampaigns(campaignData);
+      })
+    );
+
+    // 2. Fetch contacts
+    unsubs.push(
+      onSnapshot(collection(db, "contacts"), (snapshot) => {
+        const contactData: Contact[] = [];
+        snapshot.forEach((docSnap) => {
+          contactData.push({ id: docSnap.id, ...docSnap.data() } as Contact);
+        });
+        setContacts(contactData);
+      })
+    );
+
+    // 3. Fetch users from DB
+    unsubs.push(
+      onSnapshot(collection(db, "users"), (snapshot) => {
+        const userData: DBUser[] = [];
+        snapshot.forEach((docSnap) => {
+          userData.push({ id: docSnap.id, ...docSnap.data() } as DBUser);
+        });
+        setDbUsers(userData);
+      })
+    );
+
+    // 4. Fetch schedules
+    unsubs.push(
+      onSnapshot(collection(db, "schedules"), (snapshot) => {
+        const scheduleData: Schedule[] = [];
+        snapshot.forEach((docSnap) => {
+          scheduleData.push({ id: docSnap.id, ...docSnap.data() } as Schedule);
+        });
+        setSchedules(scheduleData);
+      })
+    );
+
+    // 5. Fetch states
+    unsubs.push(
+      onSnapshot(collection(db, "states"), (snapshot) => {
+        const stateData: State[] = [];
+        snapshot.forEach((docSnap) => {
+          stateData.push({ id: docSnap.id, ...docSnap.data() } as State);
+        });
+        setStatesList(stateData);
+      })
+    );
+
+    // 6. Fetch folios
+    unsubs.push(
+      onSnapshot(collection(db, "folios"), (snapshot) => {
+        const folioData: Folio[] = [];
+        snapshot.forEach((docSnap) => {
+          folioData.push({ id: docSnap.id, ...docSnap.data() } as Folio);
+        });
+        setFoliosList(folioData);
+      })
+    );
+
+    // 7. Fetch newsletters/subscribers
+    let hasNewsletters = false;
+    unsubs.push(
+      onSnapshot(collection(db, "newsletters"), (snapshot) => {
+        if (!snapshot.empty) {
+          hasNewsletters = true;
+          const subsData: any[] = [];
+          snapshot.forEach((docSnap) => {
             subsData.push({ id: docSnap.id, ...docSnap.data() });
           });
-        } catch (e2) {
-          console.warn("subscribers collection not found:", e2);
+          setSubscribersList(subsData);
+        } else if (!hasNewsletters) {
+          // If newsletters is empty, fallback to subscribers
+          const unsubSub = onSnapshot(collection(db, "subscribers"), (subSnapshot) => {
+            const subsData: any[] = [];
+            subSnapshot.forEach((docSnap) => {
+              subsData.push({ id: docSnap.id, ...docSnap.data() });
+            });
+            setSubscribersList(subsData);
+          });
+          unsubs.push(unsubSub);
         }
-      }
-      setSubscribersList(subsData);
-    } catch (err) {
-      console.error("Error loading admin data:", err);
-      toast.error("Error al cargar los datos del servidor.");
-    }
+      })
+    );
+
+    return unsubs;
   };
 
   const loadUserProfile = async (uid: string, email: string) => {
@@ -402,7 +429,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         });
         toast.success("¡Campaña creada!");
       }
-      await loadAllData();
       return true;
     } catch (err) {
       console.error(err);
@@ -418,7 +444,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         status: newStatus
       });
       toast.success(`Campaña marcada como ${newStatus === "active" ? "Activa" : "Inactiva"}`);
-      await loadAllData();
     } catch (err) {
       console.error(err);
       toast.error("Error al actualizar estado.");
@@ -429,7 +454,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     try {
       await deleteDoc(doc(db, "dayTrip", campaignId));
       toast.success("Campaña eliminada.");
-      await loadAllData();
     } catch (err) {
       console.error(err);
       toast.error("Error al eliminar campaña.");
@@ -477,7 +501,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         });
         toast.success("¡Contacto guardado en el directorio!");
       }
-      await loadAllData();
       return true;
     } catch (err) {
       console.error(err);
@@ -490,7 +513,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     try {
       await deleteDoc(doc(db, "contacts", id));
       toast.success("Contacto eliminado.");
-      await loadAllData();
     } catch (err) {
       console.error(err);
       toast.error("Error al eliminar contacto.");
@@ -525,7 +547,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         });
         toast.success("Estado registrado.");
       }
-      await loadAllData();
       return true;
     } catch (err) {
       console.error(err);
@@ -538,7 +559,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     try {
       await deleteDoc(doc(db, "states", id));
       toast.success("Estado eliminado.");
-      await loadAllData();
     } catch (err) {
       console.error(err);
       toast.error("Error al eliminar estado.");
@@ -553,7 +573,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         active: newActive
       });
       toast.success(`Folio ${folio.code} marcado como ${newActive ? "Activo" : "Completado/Desactivado"}`);
-      await loadAllData();
     } catch (err) {
       console.error(err);
       toast.error("Error al actualizar folio.");
@@ -575,7 +594,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       await Promise.all(deletePromises);
 
       toast.success(`Cita con folio ${folioCode} eliminada correctamente.`);
-      await loadAllData();
     } catch (err) {
       console.error("Error deleting folio/appointment:", err);
       toast.error("Error al eliminar la cita.");
@@ -597,7 +615,6 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         subscribersList,
         selectedYear,
         setSelectedYear,
-        loadAllData,
         handleLogout,
         handleCampaignSubmit,
         handleToggleCampaignStatus,
