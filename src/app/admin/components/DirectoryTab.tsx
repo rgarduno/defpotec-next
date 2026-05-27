@@ -1,10 +1,22 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAdmin, Contact } from "../context/AdminContext";
 import ConfirmModal from "./ConfirmModal";
 import { useSortableData, SortIcon } from "../../../hooks/useSortableData";
+import { 
+  collection, 
+  query, 
+  orderBy, 
+  limit, 
+  startAfter, 
+  endBefore, 
+  limitToLast, 
+  getDocs, 
+  getCountFromServer 
+} from "firebase/firestore";
+import { db } from "@/firebase/config";
 
 const defaultContactForm = {
   contactName: "",
@@ -20,15 +32,104 @@ const defaultContactForm = {
   notes: "",
 };
 
+const PAGE_SIZE = 10;
+
 export default function DirectoryTab() {
-  const { contacts, handleContactSubmit, handleDeleteContact } = useAdmin();
+  const { handleContactSubmit, handleDeleteContact, refreshTrigger } = useAdmin();
   
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [pageDocs, setPageDocs] = useState<{ [page: number]: { first: any; last: any } }>({});
+
   const { items: sortedContacts, requestSort, sortConfig } = useSortableData(contacts);
 
   const [contactForm, setContactForm] = useState(defaultContactForm);
   const [editingContactId, setEditingContactId] = useState("");
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [contactToDelete, setContactToDelete] = useState<Contact | null>(null);
+
+  // Count total contacts
+  const fetchCount = async () => {
+    try {
+      const snap = await getCountFromServer(collection(db, "contacts"));
+      setTotalCount(snap.data().count);
+    } catch (err) {
+      console.error("Error counting contacts:", err);
+    }
+  };
+
+  // Fetch page data
+  const fetchContacts = async (page: number, direction: "next" | "prev" | "init" = "init") => {
+    setLoading(true);
+    try {
+      let q;
+      const contactsRef = collection(db, "contacts");
+
+      if (direction === "next" && pageDocs[page - 1]?.last) {
+        q = query(
+          contactsRef,
+          orderBy("place", "asc"),
+          startAfter(pageDocs[page - 1].last),
+          limit(PAGE_SIZE)
+        );
+      } else if (direction === "prev" && pageDocs[page + 1]?.first) {
+        q = query(
+          contactsRef,
+          orderBy("place", "asc"),
+          endBefore(pageDocs[page + 1].first),
+          limitToLast(PAGE_SIZE)
+        );
+      } else {
+        q = query(
+          contactsRef,
+          orderBy("place", "asc"),
+          limit(PAGE_SIZE)
+        );
+      }
+
+      const snap = await getDocs(q);
+      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Contact));
+      setContacts(data);
+
+      if (!snap.empty) {
+        setPageDocs(prev => ({
+          ...prev,
+          [page]: {
+            first: snap.docs[0],
+            last: snap.docs[snap.docs.length - 1]
+          }
+        }));
+      }
+    } catch (err) {
+      console.error("Error fetching contacts:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCount();
+    fetchContacts(1, "init");
+    setCurrentPage(1);
+  }, [refreshTrigger]);
+
+  const handleNextPage = () => {
+    const nextPage = currentPage + 1;
+    if (nextPage <= Math.ceil(totalCount / PAGE_SIZE)) {
+      fetchContacts(nextPage, "next");
+      setCurrentPage(nextPage);
+    }
+  };
+
+  const handlePrevPage = () => {
+    const prevPage = currentPage - 1;
+    if (prevPage >= 1) {
+      fetchContacts(prevPage, "prev");
+      setCurrentPage(prevPage);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -221,79 +322,108 @@ export default function DirectoryTab() {
       </div>
 
       {/* LIST OF CONTACTS */}
-      <div className="lg:col-span-2 bg-[#111] border border-white/10 rounded-2xl overflow-hidden shadow-xl">
-        <div className="p-5 border-b border-white/5 bg-white/5">
-          <h3 className="font-bold text-white text-sm uppercase tracking-wider">Lugares Registrados (Directorio)</h3>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-white/10 text-xs text-slate-400 uppercase tracking-widest bg-white/2">
-                <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSort("place")}>
-                  Establecimiento / Contacto <SortIcon active={sortConfig?.key === "place"} direction={sortConfig?.direction || null} />
-                </th>
-                <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSort("selectedState")}>
-                  Ubicación <SortIcon active={sortConfig?.key === "selectedState"} direction={sortConfig?.direction || null} />
-                </th>
-                <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSort("telephone")}>
-                  Contacto / Tel <SortIcon active={sortConfig?.key === "telephone"} direction={sortConfig?.direction || null} />
-                </th>
-                <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSort("address")}>
-                  Dirección <SortIcon active={sortConfig?.key === "address"} direction={sortConfig?.direction || null} />
-                </th>
-                <th className="p-4 text-center">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedContacts.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="p-8 text-center text-slate-500 text-sm">
-                    No hay contactos en el directorio aún.
-                  </td>
-                </tr>
-              ) : (
-                sortedContacts.map((contact) => (
-                  <tr key={contact.id} className="border-b border-white/5 hover:bg-white/2 text-sm text-slate-300">
-                    <td className="p-4">
-                      <p className="font-semibold text-white">{contact.place}</p>
-                      <p className="text-xs text-slate-500">{contact.contactName}</p>
-                    </td>
-                    <td className="p-4 text-xs">
-                      {contact.selectedMunicipality}, {contact.selectedState}
-                    </td>
-                    <td className="p-4 text-xs">
-                      <p>{contact.cellphone || contact.telephone || "S/T"}</p>
-                      <p className="text-[10px] text-slate-500">{contact.schedule}</p>
-                    </td>
-                    <td className="p-4 text-xs text-slate-400 max-w-xs truncate" title={contact.address}>
-                      {contact.address}
-                    </td>
-                    <td className="p-4 text-center">
-                      <div className="flex gap-2 justify-center">
-                        <button
-                          onClick={() => openEditContact(contact)}
-                          className="p-1.5 bg-white/5 hover:bg-[#006828] text-slate-400 hover:text-white rounded-lg transition-colors cursor-pointer"
-                          title="Editar"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          onClick={() => {
-                            setContactToDelete(contact);
-                            setIsConfirmOpen(true);
-                          }}
-                          className="p-1.5 bg-[#9B0000]/10 hover:bg-[#9B0000] text-[#9B0000] hover:text-white rounded-lg transition-colors cursor-pointer"
-                          title="Eliminar"
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </td>
+      <div className="lg:col-span-2 bg-[#111] border border-white/10 rounded-2xl overflow-hidden shadow-xl flex flex-col justify-between">
+        <div>
+          <div className="p-5 border-b border-white/5 bg-white/5">
+            <h3 className="font-bold text-white text-sm uppercase tracking-wider">Lugares Registrados (Directorio)</h3>
+          </div>
+          <div className="overflow-x-auto">
+            {loading ? (
+              <div className="p-8 text-center text-slate-400">Cargando directorio...</div>
+            ) : (
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-white/10 text-xs text-slate-400 uppercase tracking-widest bg-white/2">
+                    <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSort("place")}>
+                      Establecimiento / Contacto <SortIcon active={sortConfig?.key === "place"} direction={sortConfig?.direction || null} />
+                    </th>
+                    <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSort("selectedState")}>
+                      Ubicación <SortIcon active={sortConfig?.key === "selectedState"} direction={sortConfig?.direction || null} />
+                    </th>
+                    <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSort("telephone")}>
+                      Contacto / Tel <SortIcon active={sortConfig?.key === "telephone"} direction={sortConfig?.direction || null} />
+                    </th>
+                    <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSort("address")}>
+                      Dirección <SortIcon active={sortConfig?.key === "address"} direction={sortConfig?.direction || null} />
+                    </th>
+                    <th className="p-4 text-center">Acciones</th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                </thead>
+                <tbody>
+                  {sortedContacts.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center text-slate-500 text-sm">
+                        No hay contactos en el directorio aún.
+                      </td>
+                    </tr>
+                  ) : (
+                    sortedContacts.map((contact) => (
+                      <tr key={contact.id} className="border-b border-white/5 hover:bg-white/2 text-sm text-slate-300">
+                        <td className="p-4">
+                          <p className="font-semibold text-white">{contact.place}</p>
+                          <p className="text-xs text-slate-500">{contact.contactName}</p>
+                        </td>
+                        <td className="p-4 text-xs">
+                          {contact.selectedMunicipality}, {contact.selectedState}
+                        </td>
+                        <td className="p-4 text-xs">
+                          <p>{contact.cellphone || contact.telephone || "S/T"}</p>
+                          <p className="text-[10px] text-slate-500">{contact.schedule}</p>
+                        </td>
+                        <td className="p-4 text-xs text-slate-400 max-w-xs truncate" title={contact.address}>
+                          {contact.address}
+                        </td>
+                        <td className="p-4 text-center">
+                          <div className="flex gap-2 justify-center">
+                            <button
+                              onClick={() => openEditContact(contact)}
+                              className="p-1.5 bg-white/5 hover:bg-[#006828] text-slate-400 hover:text-white rounded-lg transition-colors cursor-pointer"
+                              title="Editar"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              onClick={() => {
+                                setContactToDelete(contact);
+                                setIsConfirmOpen(true);
+                              }}
+                              className="p-1.5 bg-[#9B0000]/10 hover:bg-[#9B0000] text-[#9B0000] hover:text-white rounded-lg transition-colors cursor-pointer"
+                              title="Eliminar"
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+
+        {/* PAGINATION CONTROLS */}
+        <div className="p-4 border-t border-white/5 bg-white/2 flex items-center justify-between text-xs text-slate-400">
+          <div>
+            Mostrando {contacts.length > 0 ? (currentPage - 1) * PAGE_SIZE + 1 : 0} - {Math.min(currentPage * PAGE_SIZE, totalCount)} de {totalCount} sucursales
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handlePrevPage}
+              disabled={currentPage === 1 || loading}
+              className="px-3 py-1.5 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-white/5 text-white font-bold rounded-lg border border-white/10 transition-colors cursor-pointer"
+            >
+              Anterior
+            </button>
+            <button
+              onClick={handleNextPage}
+              disabled={currentPage >= Math.ceil(totalCount / PAGE_SIZE) || loading}
+              className="px-3 py-1.5 bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-white/5 text-white font-bold rounded-lg border border-white/10 transition-colors cursor-pointer"
+            >
+              Siguiente
+            </button>
+          </div>
         </div>
       </div>
       <AnimatePresence>

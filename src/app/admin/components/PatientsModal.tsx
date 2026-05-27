@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAdmin, DayTrip } from "../context/AdminContext";
+import { useAdmin, DayTrip, Folio } from "../context/AdminContext";
 import ConfirmModal from "./ConfirmModal";
 import { useSortableData, SortIcon } from "../../../hooks/useSortableData";
 import { formatDateStr } from "../../../utils/dateFormatter";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "@/firebase/config";
 
 interface PatientsModalProps {
   isOpen: boolean;
@@ -14,14 +16,35 @@ interface PatientsModalProps {
 }
 
 export default function PatientsModal({ isOpen, onClose, campaign }: PatientsModalProps) {
-  const { foliosList, handleDeleteFolio } = useAdmin();
+  const { handleDeleteFolio, refreshTrigger } = useAdmin();
+  const [patients, setPatients] = useState<Folio[]>([]);
+  const [loading, setLoading] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [folioToDelete, setFolioToDelete] = useState<any | null>(null);
 
-  if (!isOpen || !campaign) return null;
-
-  const patients = foliosList.filter(f => f.dayTrip === campaign.uuid);
   const { items: sortedPatients, requestSort, sortConfig } = useSortableData(patients);
+
+  // Fetch only the patients associated with this campaign
+  useEffect(() => {
+    if (isOpen && campaign) {
+      const loadPatients = async () => {
+        setLoading(true);
+        try {
+          const q = query(collection(db, "folios"), where("dayTrip", "==", campaign.uuid));
+          const snap = await getDocs(q);
+          const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Folio));
+          setPatients(data);
+        } catch (err) {
+          console.error("Error loading patients for campaign:", err);
+        } finally {
+          setLoading(false);
+        }
+      };
+      loadPatients();
+    }
+  }, [campaign, isOpen, refreshTrigger]);
+
+  if (!isOpen || !campaign) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/70 backdrop-blur-sm">
@@ -54,7 +77,9 @@ export default function PatientsModal({ isOpen, onClose, campaign }: PatientsMod
         </div>
 
         <div className="p-6 md:p-8 overflow-y-auto flex-1">
-          {patients.length === 0 ? (
+          {loading ? (
+            <div className="text-center py-12 text-slate-400">Cargando pacientes de la jornada...</div>
+          ) : patients.length === 0 ? (
             <div className="text-center py-12 text-slate-500 text-sm border border-dashed border-white/10 rounded-2xl">
               No hay pacientes registrados para esta jornada aún.
             </div>

@@ -14,8 +14,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     currentUser,
     handleLogout,
     selectedYear,
-    setSelectedYear,
-    campaigns
+    setSelectedYear
   } = useAdmin();
 
   if (loading) {
@@ -48,12 +47,12 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Calculate available years for selector
-  const availableYears = Array.from(new Set([
-    new Date().getFullYear(),
-    ...campaigns.map(c => c.year).filter(Boolean),
-    ...campaigns.map(c => c.endYear).filter(Boolean)
-  ])).sort((a, b) => b - a);
+  // Calculate available years dynamically from starting year 2024 to currentYear + 1
+  const currentYear = new Date().getFullYear();
+  const availableYears = Array.from(
+    { length: currentYear - 2024 + 2 }, 
+    (_, i) => currentYear + 1 - i
+  );
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col font-sans">

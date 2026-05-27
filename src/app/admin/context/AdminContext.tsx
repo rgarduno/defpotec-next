@@ -12,8 +12,7 @@ import {
   deleteDoc, 
   serverTimestamp,
   query,
-  where,
-  onSnapshot
+  where
 } from "firebase/firestore";
 import { auth, db } from "@/firebase/config";
 import { useRouter } from "next/navigation";
@@ -21,7 +20,6 @@ import toast from "react-hot-toast";
 
 const ADMIN_EMAILS = ["lx.garduno@gmail.com", "alosgar@gmail.com"];
 
-// Types matching Firestore database
 export type DayTrip = {
   uuid: string;
   title: string;
@@ -101,15 +99,10 @@ interface AdminContextType {
   currentUser: FirebaseUser | null;
   loading: boolean;
   accessDenied: boolean;
-  campaigns: DayTrip[];
-  contacts: Contact[];
-  dbUsers: DBUser[];
-  schedules: Schedule[];
-  statesList: State[];
-  foliosList: Folio[];
-  subscribersList: any[];
   selectedYear: number;
   setSelectedYear: (year: number) => void;
+  refreshTrigger: number;
+  triggerRefresh: () => void;
   handleLogout: () => Promise<void>;
   handleCampaignSubmit: (
     form: {
@@ -166,19 +159,11 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const [accessDenied, setAccessDenied] = useState(false);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [userProfile, setUserProfile] = useState<any | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // Data States
-  const [campaigns, setCampaigns] = useState<DayTrip[]>([]);
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [dbUsers, setDbUsers] = useState<DBUser[]>([]);
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [statesList, setStatesList] = useState<State[]>([]);
-  const [foliosList, setFoliosList] = useState<Folio[]>([]);
-  const [subscribersList, setSubscribersList] = useState<any[]>([]);
+  const triggerRefresh = () => setRefreshTrigger(prev => prev + 1);
 
   useEffect(() => {
-    let unsubscribes: any[] = [];
-    
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (!user) {
         router.replace("/login");
@@ -188,113 +173,14 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       } else {
         setCurrentUser(user);
         await loadUserProfile(user.uid, user.email || "");
-        unsubscribes = setupRealtimeListeners();
         setLoading(false);
       }
     });
 
     return () => {
       unsubscribeAuth();
-      unsubscribes.forEach(unsub => unsub());
     };
   }, [router]);
-
-  const setupRealtimeListeners = () => {
-    const unsubs: any[] = [];
-
-    // 1. Fetch campaigns (dayTrip)
-    unsubs.push(
-      onSnapshot(collection(db, "dayTrip"), (snapshot) => {
-        const campaignData: DayTrip[] = [];
-        snapshot.forEach((docSnap) => {
-          campaignData.push({ uuid: docSnap.id, ...docSnap.data() } as DayTrip);
-        });
-        setCampaigns(campaignData);
-      })
-    );
-
-    // 2. Fetch contacts
-    unsubs.push(
-      onSnapshot(collection(db, "contacts"), (snapshot) => {
-        const contactData: Contact[] = [];
-        snapshot.forEach((docSnap) => {
-          contactData.push({ id: docSnap.id, ...docSnap.data() } as Contact);
-        });
-        setContacts(contactData);
-      })
-    );
-
-    // 3. Fetch users from DB
-    unsubs.push(
-      onSnapshot(collection(db, "users"), (snapshot) => {
-        const userData: DBUser[] = [];
-        snapshot.forEach((docSnap) => {
-          userData.push({ id: docSnap.id, ...docSnap.data() } as DBUser);
-        });
-        setDbUsers(userData);
-      })
-    );
-
-    // 4. Fetch schedules
-    unsubs.push(
-      onSnapshot(collection(db, "schedules"), (snapshot) => {
-        const scheduleData: Schedule[] = [];
-        snapshot.forEach((docSnap) => {
-          scheduleData.push({ id: docSnap.id, ...docSnap.data() } as Schedule);
-        });
-        setSchedules(scheduleData);
-      })
-    );
-
-    // 5. Fetch states
-    unsubs.push(
-      onSnapshot(collection(db, "states"), (snapshot) => {
-        const stateData: State[] = [];
-        snapshot.forEach((docSnap) => {
-          stateData.push({ id: docSnap.id, ...docSnap.data() } as State);
-        });
-        setStatesList(stateData);
-      })
-    );
-
-    // 6. Fetch folios
-    unsubs.push(
-      onSnapshot(collection(db, "folios"), (snapshot) => {
-        const folioData: Folio[] = [];
-        snapshot.forEach((docSnap) => {
-          folioData.push({ id: docSnap.id, ...docSnap.data() } as Folio);
-        });
-        setFoliosList(folioData);
-      })
-    );
-
-    // 7. Fetch newsletters/subscribers
-    let hasNewsletters = false;
-    unsubs.push(
-      onSnapshot(collection(db, "newsletters"), (snapshot) => {
-        if (!snapshot.empty) {
-          hasNewsletters = true;
-          const subsData: any[] = [];
-          snapshot.forEach((docSnap) => {
-            subsData.push({ id: docSnap.id, ...docSnap.data() });
-          });
-          setSubscribersList(subsData);
-        } else if (!hasNewsletters) {
-          // If newsletters is empty, fallback to subscribers
-          const unsubSub = onSnapshot(collection(db, "subscribers"), (subSnapshot) => {
-            const subsData: any[] = [];
-            subSnapshot.forEach((docSnap) => {
-              subsData.push({ id: docSnap.id, ...docSnap.data() });
-            });
-            setSubscribersList(subsData);
-          });
-          unsubs.push(unsubSub);
-        }
-      })
-    );
-
-    return unsubs;
-  };
 
   const loadUserProfile = async (uid: string, email: string) => {
     try {
@@ -381,16 +267,47 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       return false;
     }
 
-    const placeObj = contacts.find(c => c.id === form.selectedPlaceId);
-    const scheduleObj = schedules.find(s => s.id === form.selectedScheduleId);
-    
+    let placeObj = null;
+    try {
+      const placeDoc = await getDoc(doc(db, "contacts", form.selectedPlaceId));
+      if (placeDoc.exists()) {
+        placeObj = { id: placeDoc.id, ...placeDoc.data() } as any;
+      }
+    } catch (err) {
+      console.error("Error fetching contact for campaign:", err);
+    }
+
     if (!placeObj) {
       toast.error("Lugar no válido.");
       return false;
     }
 
+    let scheduleObj = null;
+    try {
+      if (form.selectedScheduleId) {
+        const scheduleDoc = await getDoc(doc(db, "schedules", form.selectedScheduleId));
+        if (scheduleDoc.exists()) {
+          scheduleObj = { id: scheduleDoc.id, ...scheduleDoc.data() } as any;
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching schedule for campaign:", err);
+    }
+
     const startInfo = parseDateFields(form.startDateStr);
     const endInfo = parseDateFields(form.endDateStr);
+
+    let campaignStatus = "active";
+    if (isEdit) {
+      try {
+        const campDoc = await getDoc(doc(db, "dayTrip", campaignId));
+        if (campDoc.exists()) {
+          campaignStatus = campDoc.data().status || "active";
+        }
+      } catch (err) {
+        console.error("Error fetching campaign for status:", err);
+      }
+    }
 
     const docData = {
       title: form.title,
@@ -402,7 +319,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       state: placeObj.selectedState || "",
       time: scheduleObj?.name || "10:00 Hrs. a 18:00 Hrs.",
       picture: form.picture || "https://images.unsplash.com/photo-1518206075495-4e901709d372?auto=format&fit=crop&w=1350&q=80",
-      status: isEdit ? campaigns.find(c => c.uuid === campaignId)?.status || "active" : "active",
+      status: campaignStatus,
       date: formatDateLabel(form.startDateStr),
       endDate: formatDateLabel(form.endDateStr),
       day: startInfo.day,
@@ -429,6 +346,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         });
         toast.success("¡Campaña creada!");
       }
+      triggerRefresh();
       return true;
     } catch (err) {
       console.error(err);
@@ -444,6 +362,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         status: newStatus
       });
       toast.success(`Campaña marcada como ${newStatus === "active" ? "Activa" : "Inactiva"}`);
+      triggerRefresh();
     } catch (err) {
       console.error(err);
       toast.error("Error al actualizar estado.");
@@ -454,6 +373,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     try {
       await deleteDoc(doc(db, "dayTrip", campaignId));
       toast.success("Campaña eliminada.");
+      triggerRefresh();
     } catch (err) {
       console.error(err);
       toast.error("Error al eliminar campaña.");
@@ -501,6 +421,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         });
         toast.success("¡Contacto guardado en el directorio!");
       }
+      triggerRefresh();
       return true;
     } catch (err) {
       console.error(err);
@@ -513,6 +434,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     try {
       await deleteDoc(doc(db, "contacts", id));
       toast.success("Contacto eliminado.");
+      triggerRefresh();
     } catch (err) {
       console.error(err);
       toast.error("Error al eliminar contacto.");
@@ -547,6 +469,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         });
         toast.success("Estado registrado.");
       }
+      triggerRefresh();
       return true;
     } catch (err) {
       console.error(err);
@@ -559,6 +482,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     try {
       await deleteDoc(doc(db, "states", id));
       toast.success("Estado eliminado.");
+      triggerRefresh();
     } catch (err) {
       console.error(err);
       toast.error("Error al eliminar estado.");
@@ -573,6 +497,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         active: newActive
       });
       toast.success(`Folio ${folio.code} marcado como ${newActive ? "Activo" : "Completado/Desactivado"}`);
+      triggerRefresh();
     } catch (err) {
       console.error(err);
       toast.error("Error al actualizar folio.");
@@ -594,6 +519,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       await Promise.all(deletePromises);
 
       toast.success(`Cita con folio ${folioCode} eliminada correctamente.`);
+      triggerRefresh();
     } catch (err) {
       console.error("Error deleting folio/appointment:", err);
       toast.error("Error al eliminar la cita.");
@@ -606,15 +532,10 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         currentUser,
         loading,
         accessDenied,
-        campaigns,
-        contacts,
-        dbUsers,
-        schedules,
-        statesList,
-        foliosList,
-        subscribersList,
         selectedYear,
         setSelectedYear,
+        refreshTrigger,
+        triggerRefresh,
         handleLogout,
         handleCampaignSubmit,
         handleToggleCampaignStatus,

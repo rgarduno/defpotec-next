@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { useAdmin, DayTrip } from "../context/AdminContext";
+import { useAdmin, DayTrip, Contact, DBUser, Schedule } from "../context/AdminContext";
+import { collection, getDocs, query, orderBy } from "firebase/firestore";
+import { db } from "@/firebase/config";
 
 interface CampaignModalProps {
   isOpen: boolean;
@@ -21,11 +23,40 @@ const defaultForm = {
 };
 
 export default function CampaignModal({ isOpen, onClose, campaign }: CampaignModalProps) {
-  const { dbUsers, contacts, schedules, handleCampaignSubmit } = useAdmin();
+  const { handleCampaignSubmit } = useAdmin();
+  
+  const [dbUsers, setDbUsers] = useState<DBUser[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [loading, setLoading] = useState(false);
   const [form, setForm] = useState(defaultForm);
 
+  // Fetch selection options under demand when modal opens
   useEffect(() => {
-    if (campaign) {
+    if (isOpen) {
+      const loadOptions = async () => {
+        setLoading(true);
+        try {
+          const usersSnap = await getDocs(collection(db, "users"));
+          setDbUsers(usersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as DBUser)));
+
+          const contactsSnap = await getDocs(query(collection(db, "contacts"), orderBy("place", "asc")));
+          setContacts(contactsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Contact)));
+
+          const schedulesSnap = await getDocs(collection(db, "schedules"));
+          setSchedules(schedulesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Schedule)));
+        } catch (err) {
+          console.error("Error loading options for campaign creation:", err);
+        } finally {
+          setLoading(false);
+        }
+      };
+      loadOptions();
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (campaign && contacts.length > 0) {
       const matchedPlace = contacts.find(c => c.place === campaign.place || c.contactName === campaign.place);
       const matchedSchedule = schedules.find(s => s.name === campaign.time);
       
@@ -78,127 +109,131 @@ export default function CampaignModal({ isOpen, onClose, campaign }: CampaignMod
           {campaign ? "Editar Datos de la Jornada" : "Crear Nueva Jornada de Salud"}
         </h3>
         
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-slate-400">Título / Nombre de Campaña <span className="text-[#9B0000]">*</span></label>
-            <input
-              type="text"
-              placeholder="Ej. Jornada por la Salud Visual"
-              value={form.title}
-              onChange={e => setForm({ ...form, title: e.target.value })}
-              className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-slate-600 text-sm focus:outline-none focus:border-[#006828]"
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {loading ? (
+          <div className="text-center py-12 text-slate-400">Cargando opciones de formulario...</div>
+        ) : (
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-slate-400">Responsable (Encargado) <span className="text-[#9B0000]">*</span></label>
-              <select
-                value={form.author}
-                onChange={e => setForm({ ...form, author: e.target.value })}
-                className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#006828] appearance-none"
-                required
-              >
-                <option value="">Selecciona encargado</option>
-                {dbUsers.map(usr => (
-                  <option key={usr.id} value={`${usr.name} ${usr.lastname || ""}`.trim()}>
-                    {usr.name} {usr.lastname || ""} ({usr.email})
-                  </option>
-                ))}
-                {dbUsers.length === 0 && (
-                  <option value="Guillermo Alfredo Osornio García">
-                    Guillermo Alfredo Osornio García (Predeterminado)
-                  </option>
-                )}
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-slate-400">Establecimiento (Directorio) <span className="text-[#9B0000]">*</span></label>
-              <select
-                value={form.selectedPlaceId}
-                onChange={e => setForm({ ...form, selectedPlaceId: e.target.value })}
-                className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#006828] appearance-none"
-                required
-              >
-                <option value="">Selecciona lugar del directorio</option>
-                {contacts.map(c => (
-                  <option key={c.id} value={c.id}>
-                    {c.place} ({c.selectedMunicipality}, {c.selectedState})
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-slate-400">Horario de Atención</label>
-              <select
-                value={form.selectedScheduleId}
-                onChange={e => setForm({ ...form, selectedScheduleId: e.target.value })}
-                className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#006828] appearance-none"
-              >
-                <option value="">Selecciona plantilla horario</option>
-                {schedules.map(sch => (
-                  <option key={sch.id} value={sch.id}>{sch.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-slate-400">URL Imagen Banner</label>
+              <label className="text-xs text-slate-400">Título / Nombre de Campaña <span className="text-[#9B0000]">*</span></label>
               <input
                 type="text"
-                placeholder="https://..."
-                value={form.picture}
-                onChange={e => setForm({ ...form, picture: e.target.value })}
+                placeholder="Ej. Jornada por la Salud Visual"
+                value={form.title}
+                onChange={e => setForm({ ...form, title: e.target.value })}
                 className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-slate-600 text-sm focus:outline-none focus:border-[#006828]"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-slate-400">Fecha de Inicio <span className="text-[#9B0000]">*</span></label>
-              <input
-                type="date"
-                value={form.startDateStr}
-                onChange={e => setForm({ ...form, startDateStr: e.target.value })}
-                className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#006828]"
                 required
               />
             </div>
 
-            <div className="flex flex-col gap-1">
-              <label className="text-xs text-slate-400">Fecha de Cierre <span className="text-[#9B0000]">*</span></label>
-              <input
-                type="date"
-                value={form.endDateStr}
-                onChange={e => setForm({ ...form, endDateStr: e.target.value })}
-                className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#006828]"
-                required
-              />
-            </div>
-          </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-slate-400">Responsable (Encargado) <span className="text-[#9B0000]">*</span></label>
+                <select
+                  value={form.author}
+                  onChange={e => setForm({ ...form, author: e.target.value })}
+                  className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#006828] appearance-none"
+                  required
+                >
+                  <option value="">Selecciona encargado</option>
+                  {dbUsers.map(usr => (
+                    <option key={usr.id} value={`${usr.name} ${usr.lastname || ""}`.trim()}>
+                      {usr.name} {usr.lastname || ""} ({usr.email})
+                    </option>
+                  ))}
+                  {dbUsers.length === 0 && (
+                    <option value="Guillermo Alfredo Osornio García">
+                      Guillermo Alfredo Osornio García (Predeterminado)
+                    </option>
+                  )}
+                </select>
+              </div>
 
-          <div className="flex gap-4 justify-end mt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-6 py-2.5 border border-white/10 hover:border-white/20 rounded-full text-sm font-bold text-slate-300 hover:text-white transition-colors cursor-pointer"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="px-6 py-2.5 bg-[#006828] hover:bg-[#00501f] text-white rounded-full font-bold text-sm shadow-[0_0_15px_rgba(0,104,40,0.3)] transition-colors cursor-pointer"
-            >
-              {campaign ? "Guardar Cambios" : "Crear Jornada"}
-            </button>
-          </div>
-        </form>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-slate-400">Establecimiento (Directorio) <span className="text-[#9B0000]">*</span></label>
+                <select
+                  value={form.selectedPlaceId}
+                  onChange={e => setForm({ ...form, selectedPlaceId: e.target.value })}
+                  className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#006828] appearance-none"
+                  required
+                >
+                  <option value="">Selecciona lugar del directorio</option>
+                  {contacts.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.place} ({c.selectedMunicipality}, {c.selectedState})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-slate-400">Horario de Atención</label>
+                <select
+                  value={form.selectedScheduleId}
+                  onChange={e => setForm({ ...form, selectedScheduleId: e.target.value })}
+                  className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#006828] appearance-none"
+                >
+                  <option value="">Selecciona plantilla horario</option>
+                  {schedules.map(sch => (
+                    <option key={sch.id} value={sch.id}>{sch.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-slate-400">URL Imagen Banner</label>
+                <input
+                  type="text"
+                  placeholder="https://..."
+                  value={form.picture}
+                  onChange={e => setForm({ ...form, picture: e.target.value })}
+                  className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-slate-600 text-sm focus:outline-none focus:border-[#006828]"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-slate-400">Fecha de Inicio <span className="text-[#9B0000]">*</span></label>
+                <input
+                  type="date"
+                  value={form.startDateStr}
+                  onChange={e => setForm({ ...form, startDateStr: e.target.value })}
+                  className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#006828]"
+                  required
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-slate-400">Fecha de Cierre <span className="text-[#9B0000]">*</span></label>
+                <input
+                  type="date"
+                  value={form.endDateStr}
+                  onChange={e => setForm({ ...form, endDateStr: e.target.value })}
+                  className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#006828]"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-4 justify-end mt-4">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-6 py-2.5 border border-white/10 hover:border-white/20 rounded-full text-sm font-bold text-slate-300 hover:text-white transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="px-6 py-2.5 bg-[#006828] hover:bg-[#00501f] text-white rounded-full font-bold text-sm shadow-[0_0_15px_rgba(0,104,40,0.3)] transition-colors cursor-pointer"
+              >
+                {campaign ? "Guardar Cambios" : "Crear Jornada"}
+              </button>
+            </div>
+          </form>
+        )}
       </motion.div>
     </div>
   );
