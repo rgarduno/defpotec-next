@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAdmin, DayTrip, DBUser } from "../context/AdminContext";
 import CampaignModal from "./CampaignModal";
@@ -148,20 +149,26 @@ export default function DashboardTab() {
         </div>
 
         {/* Metric 2 */}
-        <div className="bg-[#111] border border-white/10 rounded-2xl p-6 shadow-xl relative overflow-hidden flex flex-col justify-between h-32">
-          <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/5 rounded-full blur-xl pointer-events-none" />
-          <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Total Pacientes</p>
-          <h2 className="text-3xl font-black text-white">{foliosCount}</h2>
+        <Link 
+          href="/admin/citas" 
+          className="bg-[#111] border border-white/10 rounded-2xl p-6 shadow-xl relative overflow-hidden flex flex-col justify-between h-32 hover:border-[#006828]/50 hover:bg-white/2 transition-all duration-300 group cursor-pointer"
+        >
+          <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/5 rounded-full blur-xl pointer-events-none group-hover:bg-[#006828]/10 transition-all duration-300" />
+          <p className="text-xs text-slate-400 font-bold uppercase tracking-widest group-hover:text-white transition-colors">Total Pacientes</p>
+          <h2 className="text-3xl font-black text-white group-hover:text-[#4ade80] transition-colors">{foliosCount}</h2>
           <p className="text-[10px] text-slate-500">Pases generados para las jornadas del año.</p>
-        </div>
+        </Link>
 
         {/* Metric 3 */}
-        <div className="bg-[#111] border border-white/10 rounded-2xl p-6 shadow-xl relative overflow-hidden flex flex-col justify-between h-32">
-          <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-[#9B0000]/10 rounded-full blur-xl pointer-events-none" />
-          <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Optometristas / Directivos</p>
+        <Link 
+          href="/admin/usuarios" 
+          className="bg-[#111] border border-white/10 rounded-2xl p-6 shadow-xl relative overflow-hidden flex flex-col justify-between h-32 hover:border-[#9B0000]/50 hover:bg-white/2 transition-all duration-300 group cursor-pointer"
+        >
+          <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-[#9B0000]/10 rounded-full blur-xl pointer-events-none group-hover:bg-[#9B0000]/20 transition-all duration-300" />
+          <p className="text-xs text-slate-400 font-bold uppercase tracking-widest group-hover:text-white transition-colors">Usuarios</p>
           <h2 className="text-3xl font-black text-[#f87171]">{usersCount}</h2>
           <p className="text-[10px] text-slate-500">Usuarios con credenciales de acceso al sistema.</p>
-        </div>
+        </Link>
 
         {/* Metric 4 */}
         <div className="bg-[#111] border border-white/10 rounded-2xl p-6 shadow-xl relative overflow-hidden flex flex-col justify-between h-32">

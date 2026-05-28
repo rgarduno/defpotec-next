@@ -66,6 +66,8 @@ export type DBUser = {
   name: string;
   lastname?: string;
   email: string;
+  userRole?: string;
+  active?: boolean;
 };
 
 export type Schedule = {
