@@ -118,7 +118,6 @@ export default function AppointmentsTab() {
         q = query(
           foliosRef,
           where("dayTrip", "in", activeCampaignIds),
-          orderBy("createdAt", "desc"),
           startAfter(pageDocs[page - 1].last),
           limit(PAGE_SIZE)
         );
@@ -126,7 +125,6 @@ export default function AppointmentsTab() {
         q = query(
           foliosRef,
           where("dayTrip", "in", activeCampaignIds),
-          orderBy("createdAt", "desc"),
           endBefore(pageDocs[page + 1].first),
           limitToLast(PAGE_SIZE)
         );
@@ -134,7 +132,6 @@ export default function AppointmentsTab() {
         q = query(
           foliosRef,
           where("dayTrip", "in", activeCampaignIds),
-          orderBy("createdAt", "desc"),
           limit(PAGE_SIZE)
         );
       }
