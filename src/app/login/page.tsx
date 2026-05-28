@@ -27,6 +27,7 @@ export default function LoginPage() {
   // Auth state
   const [view, setView] = useState<ViewState>("login");
   const [name, setName] = useState("");
+  const [lastname, setLastname] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -97,21 +98,22 @@ export default function LoginPage() {
 
   const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !email || !password) return toast.error("Ingresa nombre, correo y contraseña.");
+    if (!name || !lastname || !email || !password) return toast.error("Ingresa nombre, apellidos, correo y contraseña.");
     if (password.length < 6) return toast.error("La contraseña debe tener al menos 6 caracteres.");
 
     setLoading(true);
     try {
       const result = await createUserWithEmailAndPassword(auth, email, password);
       
-      // Update Auth Profile
+      // Update Auth Profile with Full Name
       await updateProfile(result.user, {
-        displayName: name
+        displayName: `${name} ${lastname}`.trim()
       });
 
-      // Save user to Firestore
+      // Save user to Firestore with separate name and lastname fields
       await setDoc(doc(db, "users", result.user.uid), {
         name,
+        lastname,
         email,
         userRole: "normal"
       });
@@ -198,16 +200,29 @@ export default function LoginPage() {
           onSubmit={view === "login" ? handleEmailLogin : view === "signup" ? handleEmailSignUp : handlePasswordReset}
         >
           {view === "signup" && (
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-slate-400 ml-1">Nombre Completo</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Juan Pérez"
-                className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-[#006828] transition-colors"
-                required
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs text-slate-400 ml-1">Nombre(s) <span className="text-[#9B0000]">*</span></label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Juan"
+                  className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-[#006828] transition-colors"
+                  required
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs text-slate-400 ml-1">Apellidos <span className="text-[#9B0000]">*</span></label>
+                <input
+                  type="text"
+                  value={lastname}
+                  onChange={(e) => setLastname(e.target.value)}
+                  placeholder="Pérez"
+                  className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-3 text-white placeholder-slate-600 focus:outline-none focus:border-[#006828] transition-colors"
+                  required
+                />
+              </div>
             </div>
           )}
 

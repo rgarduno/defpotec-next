@@ -76,12 +76,15 @@ export default function Header() {
       <div className="flex items-center gap-4">
         {user ? (
           <div className="flex items-center gap-3">
-            <span className="hidden lg:inline text-xs text-slate-400">
+            <Link
+              href={isAdmin ? "/admin/perfil" : "/paciente"}
+              className="hidden lg:inline text-xs text-slate-400 hover:text-white hover:underline transition-colors cursor-pointer font-medium"
+            >
               {user.displayName || user.email}
-            </span>
+            </Link>
             <button
               onClick={handleLogout}
-              className="text-xs text-slate-400 hover:text-white transition-colors"
+              className="text-xs text-slate-400 hover:text-white transition-colors cursor-pointer"
             >
               Salir
             </button>
