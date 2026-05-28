@@ -32,6 +32,9 @@ type DayTrip = {
   time?: string;
   maps?: string;
   endDate?: string;
+  day?: number;
+  month?: number;
+  year?: number;
 };
 
 type FormData = {
@@ -103,7 +106,11 @@ export default function JornadaDetailPage({ params }: { params: Promise<{ id: st
         dayTrip: id,
         code: folioCode,
         hour: "",
-        day: "",
+        day: typeof jornada?.day === "number" ? jornada.day : (jornada?.date ? parseInt(jornada.date.split(" ")[0]) || "" : ""),
+        month: typeof jornada?.month === "number" ? jornada.month : "",
+        year: typeof jornada?.year === "number" ? jornada.year : "",
+        campaignTitle: jornada?.title || "",
+        campaignDate: jornada?.date || "",
         active: true,
         numberOfPatients: Number(form.numberOfPatients),
         createdAt: serverTimestamp(),

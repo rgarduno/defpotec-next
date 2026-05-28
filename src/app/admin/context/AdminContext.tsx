@@ -89,7 +89,11 @@ export type Folio = {
   email: string;
   dayTrip: string;
   hour: string;
-  day: string;
+  day: string | number;
+  month?: number;
+  year?: number;
+  campaignTitle?: string;
+  campaignDate?: string;
   active: boolean;
   numberOfPatients?: number;
   createdAt?: any;

@@ -285,8 +285,11 @@ export default function AppointmentsTab() {
                     <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSort("cellphone")}>
                       Celular <SortIcon active={sortConfig?.key === "cellphone"} direction={sortConfig?.direction || null} />
                     </th>
-                    <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSort("dayTrip")}>
-                      ID Campaña <SortIcon active={sortConfig?.key === "dayTrip"} direction={sortConfig?.direction || null} />
+                    <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSort("campaignTitle")}>
+                      Campaña <SortIcon active={sortConfig?.key === "campaignTitle"} direction={sortConfig?.direction || null} />
+                    </th>
+                    <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSort("day")}>
+                      Fecha Campaña <SortIcon active={sortConfig?.key === "day"} direction={sortConfig?.direction || null} />
                     </th>
                     <th className="p-4 text-center">Acciones</th>
                   </tr>
@@ -294,7 +297,7 @@ export default function AppointmentsTab() {
                 <tbody>
                   {sortedFolios.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="p-8 text-center text-slate-500 text-sm">
+                      <td colSpan={7} className="p-8 text-center text-slate-500 text-sm">
                         No se encontraron citas o folios registrados.
                       </td>
                     </tr>
@@ -316,13 +319,16 @@ export default function AppointmentsTab() {
                         <td className="p-4 font-semibold text-white">{folio.name}</td>
                         <td className="p-4 text-xs text-slate-400">{folio.email}</td>
                         <td className="p-4 text-xs text-slate-400">{folio.cellphone}</td>
-                        <td className="p-4 text-xs font-mono max-w-[150px] truncate" title={folio.dayTrip}>
+                        <td className="p-4 text-xs max-w-[150px] truncate" title={folio.campaignTitle || folio.dayTrip}>
                           <button
                             onClick={() => handleViewCampaign(folio.dayTrip)}
-                            className="text-slate-500 hover:text-[#4ade80] underline cursor-pointer text-left font-mono transition-colors focus:outline-none"
+                            className="text-slate-500 hover:text-[#4ade80] underline cursor-pointer text-left transition-colors focus:outline-none"
                           >
-                            {folio.dayTrip}
+                            {folio.campaignTitle || folio.dayTrip}
                           </button>
+                        </td>
+                        <td className="p-4 text-xs text-slate-400 font-semibold">
+                          {folio.campaignDate || (folio.day && folio.month && folio.year ? `${folio.day}/${folio.month}/${folio.year}` : "-")}
                         </td>
                         <td className="p-4">
                           <div className="flex gap-2 justify-center items-center">
