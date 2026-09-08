@@ -7,6 +7,8 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import toast, { Toaster } from "react-hot-toast";
 import Header from "@/components/Header";
+import { isValidEmail } from "@/utils/validators";
+import { getContactTargetEmail } from "@/config/mailConfig";
 
 type FormData = {
   name: string;
@@ -63,10 +65,35 @@ export default function ContactPage() {
       toast.error("Por favor llena los campos requeridos.");
       return;
     }
+    if (!isValidEmail(form.email)) {
+      toast.error("Por favor ingresa un correo electrónico válido (ejemplo@dominio.com).");
+      return;
+    }
     setSubmitting(true);
     try {
       await addDoc(collection(db, "mails"), {
-        to: "contacto@defpotecmx.com",
+        to: getContactTargetEmail(),
+        message: {
+          subject: `[Defpotec Contacto] ${form.subject}`,
+          text: `Nuevo mensaje de ${form.name} (${form.email})\nCategoría: ${form.category || "Duda general"}\n\nMensaje:\n${form.description}`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 12px; background-color: #ffffff;">
+              <div style="border-bottom: 3px solid #006828; padding-bottom: 12px; margin-bottom: 20px;">
+                <h2 style="color: #006828; margin: 0;">DEFPOTEC MX - Contacto</h2>
+              </div>
+              <p style="font-size: 15px; color: #333;">Has recibido un nuevo mensaje desde el sitio web:</p>
+              <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                <tr><td style="padding: 8px 0; color: #666; width: 120px;"><strong>Nombre:</strong></td><td style="color: #111;">${form.name}</td></tr>
+                <tr><td style="padding: 8px 0; color: #666;"><strong>Correo:</strong></td><td style="color: #111;">${form.email}</td></tr>
+                <tr><td style="padding: 8px 0; color: #666;"><strong>Categoría:</strong></td><td style="color: #111;">${form.category || "Duda general"}</td></tr>
+                <tr><td style="padding: 8px 0; color: #666;"><strong>Asunto:</strong></td><td style="color: #111;">${form.subject}</td></tr>
+              </table>
+              <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; border-left: 4px solid #006828;">
+                <p style="margin: 0; font-size: 14px; color: #444; white-space: pre-wrap;">${form.description}</p>
+              </div>
+            </div>
+          `,
+        },
         template: {
           name: 'Contact',
           data: {

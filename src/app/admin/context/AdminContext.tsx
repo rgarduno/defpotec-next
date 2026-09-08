@@ -68,6 +68,7 @@ export type DBUser = {
   email: string;
   userRole?: string;
   active?: boolean;
+  createdAt?: any;
 };
 
 export type Schedule = {
@@ -173,12 +174,39 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (!user) {
         router.replace("/login");
-      } else if (!ADMIN_EMAILS.includes(user.email || "")) {
+        return;
+      }
+
+      const isMasterAdmin = ADMIN_EMAILS.includes((user.email || "").toLowerCase());
+
+      try {
+        let userDocSnap = await getDoc(doc(db, "users", user.uid));
+        let userData: any = userDocSnap.exists() ? { id: userDocSnap.id, ...userDocSnap.data() } : null;
+
+        if (!userData && user.email) {
+          const q = query(collection(db, "users"), where("email", "==", user.email.toLowerCase()));
+          const querySnap = await getDocs(q);
+          if (!querySnap.empty) {
+            userData = { id: querySnap.docs[0].id, ...querySnap.docs[0].data() };
+          }
+        }
+
+        const role = userData?.userRole?.toLowerCase();
+        const isAuthorizedRole = isMasterAdmin || role === "admin" || role === "operator";
+        const isActive = userData ? userData.active !== false : isMasterAdmin;
+
+        if (!isAuthorizedRole || !isActive) {
+          setAccessDenied(true);
+          setLoading(false);
+        } else {
+          setCurrentUser(user);
+          setUserProfile(userData || { id: user.uid, email: user.email, userRole: "admin" });
+          setAccessDenied(false);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error("Error verifying admin access:", err);
         setAccessDenied(true);
-        setLoading(false);
-      } else {
-        setCurrentUser(user);
-        await loadUserProfile(user.uid, user.email || "");
         setLoading(false);
       }
     });
@@ -377,11 +405,22 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   const handleDeleteCampaign = async (campaignId: string) => {
     try {
+      // 1. Delete campaign document
       await deleteDoc(doc(db, "dayTrip", campaignId));
-      toast.success("Campaña eliminada.");
+
+      // 2. Cascade delete all folios associated with this campaign
+      const foliosQuery = query(collection(db, "folios"), where("dayTrip", "==", campaignId));
+      const foliosSnap = await getDocs(foliosQuery);
+      const deletePromises: Promise<void>[] = [];
+      foliosSnap.forEach(fDoc => {
+        deletePromises.push(deleteDoc(doc(db, "folios", fDoc.id)));
+      });
+      await Promise.all(deletePromises);
+
+      toast.success("Campaña y folios asociados eliminados correctamente.");
       triggerRefresh();
     } catch (err) {
-      console.error(err);
+      console.error("Error deleting campaign:", err);
       toast.error("Error al eliminar campaña.");
     }
   };

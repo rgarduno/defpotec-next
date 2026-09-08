@@ -8,10 +8,11 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
-  updateProfile
+  updateProfile,
+  signOut
 } from "firebase/auth";
 import { auth, db } from "@/firebase/config";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast, { Toaster } from "react-hot-toast";
@@ -34,13 +35,9 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        if (ADMIN_EMAILS.includes(user.email || "")) {
-          router.replace("/admin");
-        } else {
-          router.replace("/paciente");
-        }
+        await routeUser(user);
       } else {
         setCheckingAuth(false);
       }
@@ -49,13 +46,42 @@ export default function LoginPage() {
     return () => unsubscribe();
   }, [router]);
 
-  // Handle successful login routing
-  const routeUser = (userEmail: string | null) => {
-    if (ADMIN_EMAILS.includes(userEmail || "")) {
-      toast.success("¡Bienvenido Administrador!");
-      router.push("/admin");
-    } else {
-      toast.success("¡Bienvenido a DEFPOTEC!");
+  // Handle successful login routing with Firestore active & role check
+  const routeUser = async (user: any) => {
+    if (!user) return;
+    const userEmail = (user.email || "").toLowerCase();
+    const isMasterAdmin = ADMIN_EMAILS.includes(userEmail);
+
+    try {
+      let userDocSnap = await getDoc(doc(db, "users", user.uid));
+      let userData: any = userDocSnap.exists() ? userDocSnap.data() : null;
+
+      if (!userData && userEmail) {
+        const q = query(collection(db, "users"), where("email", "==", userEmail));
+        const querySnap = await getDocs(q);
+        if (!querySnap.empty) {
+          userData = querySnap.docs[0].data();
+        }
+      }
+
+      // If user is deactivated or was deleted from Firestore (and is not master admin)
+      if (userData && userData.active === false) {
+        await signOut(auth);
+        toast.error("Tu cuenta ha sido desactivada por el administrador.");
+        setCheckingAuth(false);
+        return;
+      }
+
+      const role = userData?.userRole?.toLowerCase();
+      if (isMasterAdmin || role === "admin" || role === "operator") {
+        toast.success("¡Bienvenido al Panel Administrativo!");
+        router.push("/admin");
+      } else {
+        toast.success("¡Bienvenido a DEFPOTEC!");
+        router.push("/paciente");
+      }
+    } catch (err) {
+      console.error("Error routing user:", err);
       router.push("/paciente");
     }
   };
@@ -65,7 +91,7 @@ export default function LoginPage() {
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-      routeUser(result.user.email);
+      await routeUser(result.user);
     } catch (error: any) {
       console.error("Auth error:", error);
       if (error.code !== "auth/popup-closed-by-user") {
@@ -83,7 +109,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
-      routeUser(result.user.email);
+      await routeUser(result.user);
     } catch (error: any) {
       console.error("Login error:", error);
       if (error.code === "auth/invalid-credential" || error.code === "auth/user-not-found" || error.code === "auth/wrong-password") {

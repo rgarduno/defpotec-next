@@ -8,6 +8,7 @@ import { useSortableData, SortIcon } from "../../../hooks/useSortableData";
 import { formatDateStr } from "../../../utils/dateFormatter";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/firebase/config";
+import { exportFoliosToCsv } from "@/utils/exportToCsv";
 
 interface PatientsModalProps {
   isOpen: boolean;
@@ -43,6 +44,17 @@ export default function PatientsModal({ isOpen, onClose, campaign }: PatientsMod
       loadPatients();
     }
   }, [campaign, isOpen, refreshTrigger]);
+
+  const handleExportExcel = () => {
+    if (!campaign) return;
+    const sanitizedPlace = (campaign.place || campaign.municipality || "Jornada").replace(/[^a-zA-Z0-9áéíóúñÁÉÍÓÚÑ_-]/g, "_");
+    const filename = `Pacientes_Jornada_${sanitizedPlace}.csv`;
+    exportFoliosToCsv(patients.map(p => ({
+      ...p,
+      campaignTitle: campaign.title,
+      campaignDate: campaign.date
+    })), filename);
+  };
 
   if (!isOpen || !campaign) return null;
 
@@ -156,13 +168,27 @@ export default function PatientsModal({ isOpen, onClose, campaign }: PatientsMod
           <div>
             Total Pases / Registros: <span className="text-white font-bold">{patients.length}</span>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-6 py-2 bg-white/5 hover:bg-white/10 text-white rounded-full font-bold transition-all border border-white/10 text-sm cursor-pointer"
-          >
-            Cerrar
-          </button>
+          <div className="flex items-center gap-3">
+            {patients.length > 0 && (
+              <button
+                type="button"
+                onClick={handleExportExcel}
+                className="px-4 py-2 bg-[#006828] hover:bg-[#00501f] text-white rounded-full font-bold transition-all text-xs flex items-center gap-2 shadow-[0_0_15px_rgba(0,104,40,0.3)] cursor-pointer"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Exportar a Excel (.csv)
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-6 py-2 bg-white/5 hover:bg-white/10 text-white rounded-full font-bold transition-all border border-white/10 text-sm cursor-pointer"
+            >
+              Cerrar
+            </button>
+          </div>
         </div>
       </motion.div>
 

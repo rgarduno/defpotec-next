@@ -21,6 +21,7 @@ import {
 import { db } from "@/firebase/config";
 import toast from "react-hot-toast";
 import { formatDateStr } from "../../../utils/dateFormatter";
+import { exportFoliosToCsv } from "@/utils/exportToCsv";
 
 const PAGE_SIZE = 10;
 
@@ -116,7 +117,7 @@ export default function AppointmentsTab() {
       
       if (campaignIds.length === 0) {
         setFolios([]);
-        setTotalCount(0);
+        setLoading(false);
         return;
       }
 
@@ -165,39 +166,39 @@ export default function AppointmentsTab() {
   };
 
   useEffect(() => {
-    if (activeSearch === "") {
-      fetchCount();
-    }
-    fetchFolios(1, "init", activeSearch);
+    fetchCount();
+    fetchFolios(1, "init", folioSearch);
     setCurrentPage(1);
-  }, [selectedYear, refreshTrigger, activeSearch]);
-
-  const handleNextPage = () => {
-    if (activeSearch !== "") return; // No pagination in search results
-    const nextPage = currentPage + 1;
-    if (nextPage <= Math.ceil(totalCount / PAGE_SIZE)) {
-      fetchFolios(nextPage, "next", "");
-      setCurrentPage(nextPage);
-    }
-  };
-
-  const handlePrevPage = () => {
-    if (activeSearch !== "") return; // No pagination in search results
-    const prevPage = currentPage - 1;
-    if (prevPage >= 1) {
-      fetchFolios(prevPage, "prev", "");
-      setCurrentPage(prevPage);
-    }
-  };
+  }, [selectedYear, refreshTrigger]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setActiveSearch(folioSearch);
+    setCurrentPage(1);
+    fetchFolios(1, "init", folioSearch);
   };
 
   const handleClearSearch = () => {
     setFolioSearch("");
     setActiveSearch("");
+    setCurrentPage(1);
+    fetchFolios(1, "init", "");
+  };
+
+  const handleNextPage = () => {
+    const nextPage = currentPage + 1;
+    if (nextPage <= Math.ceil(totalCount / PAGE_SIZE)) {
+      fetchFolios(nextPage, "next", activeSearch);
+      setCurrentPage(nextPage);
+    }
+  };
+
+  const handlePrevPage = () => {
+    const prevPage = currentPage - 1;
+    if (prevPage >= 1) {
+      fetchFolios(prevPage, "prev", activeSearch);
+      setCurrentPage(prevPage);
+    }
   };
 
   const handleViewCampaign = async (campaignId: string) => {
@@ -205,17 +206,16 @@ export default function AppointmentsTab() {
     setLoadingCampaign(true);
     setIsCampaignDetailsOpen(true);
     try {
-      const docRef = doc(db, "dayTrip", campaignId);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        setSelectedCampaign({ uuid: docSnap.id, ...docSnap.data() } as DayTrip);
+      const campDoc = await getDoc(doc(db, "dayTrip", campaignId));
+      if (campDoc.exists()) {
+        setSelectedCampaign({ uuid: campDoc.id, ...campDoc.data() } as unknown as DayTrip);
       } else {
         setSelectedCampaign(null);
-        toast.error("No se encontraron detalles para esta campaña.");
+        toast.error("No se encontró la información de la campaña.");
       }
     } catch (err) {
       console.error("Error fetching campaign details:", err);
-      toast.error("Error al cargar detalles de la campaña.");
+      toast.error("Error al cargar la información de la campaña.");
     } finally {
       setLoadingCampaign(false);
     }
@@ -224,17 +224,18 @@ export default function AppointmentsTab() {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-6">
       
-      {/* SEARCH BAR */}
+      {/* SEARCH AND BAR HEADER */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#111] border border-white/10 rounded-2xl p-6 shadow-xl">
         <div>
-          <h3 className="font-bold text-white">Buscador y Conciliador de Citas</h3>
-          <p className="text-xs text-slate-400 mt-1">Busca por código de folio, nombre del paciente o correo electrónico.</p>
+          <h3 className="font-bold text-white">Control de Citas & Folios</h3>
+          <p className="text-xs text-slate-400 mt-1">Busca folios por código exacto, correo o iniciales del nombre.</p>
         </div>
+        
         <form onSubmit={handleSearchSubmit} className="w-full sm:w-auto flex gap-2">
-          <div className="relative flex-grow sm:flex-grow-0">
+          <div className="relative w-full sm:w-80">
             <input
               type="text"
-              placeholder="Buscar folio (ej. DF98X o Laura)..."
+              placeholder="Buscar por Folio, Nombre o Email..."
               value={folioSearch}
               onChange={e => setFolioSearch(e.target.value)}
               className="w-full sm:w-80 bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 pr-8 text-white placeholder-slate-600 text-sm focus:outline-none focus:border-[#006828]"
@@ -265,6 +266,18 @@ export default function AppointmentsTab() {
             <h3 className="font-bold text-white text-sm uppercase tracking-wider">
               {activeSearch ? `Resultados de Búsqueda: "${activeSearch}"` : `Listado General de Pacientes (${selectedYear})`}
             </h3>
+            {folios.length > 0 && (
+              <button
+                type="button"
+                onClick={() => exportFoliosToCsv(folios, `Control_de_Citas_${selectedYear}.csv`)}
+                className="px-3.5 py-1.5 bg-[#006828] hover:bg-[#00501f] text-white rounded-xl font-bold transition-all text-xs flex items-center gap-2 shadow-[0_0_15px_rgba(0,104,40,0.3)] cursor-pointer"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Exportar a Excel (.csv)
+              </button>
+            )}
           </div>
           <div className="overflow-x-auto">
             {loading ? (

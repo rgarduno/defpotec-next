@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="greenGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#006828" />
+      <stop offset="100%" stop-color="#4ade80" />
+    </linearGradient>
+    <linearGradient id="redGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ef4444" />
+      <stop offset="100%" stop-color="#9B0000" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background for favicon -->
+  <rect width="512" height="512" rx="128" fill="#0a0a0a" />
+
+  <!-- Top Green Accent Line -->
+  <rect x="76" y="72" width="360" height="32" rx="16" fill="url(#greenGrad)" />
+
+  <!-- Stylized Vision Eye Symbol -->
+  <!-- Upper Lid -->
+  <path d="M 110 256 C 165 150, 347 150, 402 256" fill="none" stroke="url(#greenGrad)" stroke-width="32" stroke-linecap="round" />
+
+  <!-- Lower Lid -->
+  <path d="M 110 256 C 165 362, 347 362, 402 256" fill="none" stroke="url(#redGrad)" stroke-width="32" stroke-linecap="round" />
+
+  <!-- Iris and Pupil -->
+  <circle cx="256" cy="256" r="60" fill="#ffffff" />
+  <circle cx="256" cy="256" r="32" fill="#006828" />
+  <circle cx="272" cy="240" r="10" fill="#ffffff" />
+
+  <!-- Bottom Red Accent Line -->
+  <rect x="76" y="408" width="360" height="32" rx="16" fill="url(#redGrad)" />
+</svg>

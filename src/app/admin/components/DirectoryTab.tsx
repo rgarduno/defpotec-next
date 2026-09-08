@@ -17,6 +17,8 @@ import {
   getCountFromServer 
 } from "firebase/firestore";
 import { db } from "@/firebase/config";
+import toast from "react-hot-toast";
+import { isValidPhone } from "@/utils/validators";
 
 const defaultContactForm = {
   contactName: "",
@@ -133,6 +135,14 @@ export default function DirectoryTab() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (contactForm.cellphone && !isValidPhone(contactForm.cellphone)) {
+      return toast.error("El número celular debe tener exactamente 10 dígitos (ej. 5512345678).");
+    }
+    if (contactForm.telephone && !isValidPhone(contactForm.telephone)) {
+      return toast.error("El teléfono fijo debe tener exactamente 10 dígitos (ej. 5512345678).");
+    }
+
     const success = await handleContactSubmit(contactForm, editingContactId);
     if (success) {
       setContactForm(defaultContactForm);

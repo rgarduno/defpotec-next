@@ -88,15 +88,23 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Columna 2: Enlaces Rápidos */}
+        {/* Columna 2: Enlaces Rápidos y Legales */}
         <div className="flex flex-col gap-4">
-          <h4 className="text-white font-bold text-sm uppercase tracking-wider">Enlaces Rápidos</h4>
+          <h4 className="text-white font-bold text-sm uppercase tracking-wider">Enlaces & Legal</h4>
           <nav className="flex flex-col gap-2.5 text-sm">
             <Link href="/" className="hover:text-white transition-colors">Inicio</Link>
-            <Link href="/jornadas" className="hover:text-white transition-colors">Jornadas</Link>
+            <Link href="/jornadas" className="hover:text-white transition-colors">Jornadas Visuales</Link>
             <Link href="/servicios" className="hover:text-white transition-colors">Servicios</Link>
             <Link href="/nosotros" className="hover:text-white transition-colors">Nosotros</Link>
             <Link href="/contacto" className="hover:text-white transition-colors">Contacto</Link>
+            <div className="pt-2 border-t border-white/5 flex flex-col gap-2 text-xs text-slate-400">
+              <Link href="/privacidad" className="hover:text-[#4ade80] transition-colors flex items-center gap-1.5">
+                <span>📄</span> Aviso de Privacidad
+              </Link>
+              <Link href="/terminos" className="hover:text-[#4ade80] transition-colors flex items-center gap-1.5">
+                <span>⚖️</span> Términos y Condiciones
+              </Link>
+            </div>
           </nav>
         </div>
 
@@ -172,12 +180,16 @@ export default function Footer() {
       </div>
 
       {/* Barra Inferior */}
-      <div className="border-t border-white/5 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-slate-600">
+      <div className="border-t border-white/5 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-slate-500">
         <p>&copy; {currentYear} DEFPOTEC MX. Todos los derechos reservados.</p>
-        <div className="flex gap-4">
-          <Link href="/contacto" className="hover:text-slate-400 transition-colors">Aviso de Privacidad</Link>
+        <div className="flex flex-wrap items-center justify-center gap-4 text-slate-400">
+          <Link href="/privacidad" className="hover:text-white transition-colors font-medium">Aviso de Privacidad</Link>
           <span>&middot;</span>
-          <Link href="/contacto" className="hover:text-slate-400 transition-colors">Términos y Condiciones</Link>
+          <Link href="/terminos" className="hover:text-white transition-colors font-medium font-medium">Términos y Condiciones</Link>
+          <span>&middot;</span>
+          <span className="text-[10px] bg-white/5 text-slate-400 px-2.5 py-0.5 rounded-full border border-white/5">
+            Cumplimiento LFPDPPP
+          </span>
         </div>
       </div>
     </footer>

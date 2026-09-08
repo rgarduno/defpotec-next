@@ -7,6 +7,8 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import toast, { Toaster } from "react-hot-toast";
 import Header from "@/components/Header";
+import { isValidEmail, isValidPhone } from "@/utils/validators";
+import { getContactTargetEmail } from "@/config/mailConfig";
 
 function generateFolioCode(length: number = 5): string {
   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -79,6 +81,14 @@ export default function JornadaDetailPage({ params }: { params: Promise<{ id: st
       toast.error("Por favor llena todos los campos requeridos.");
       return;
     }
+    if (!isValidPhone(form.phone)) {
+      toast.error("El número de teléfono debe tener exactamente 10 dígitos.");
+      return;
+    }
+    if (form.email && !isValidEmail(form.email)) {
+      toast.error("Por favor ingresa un correo electrónico válido (ejemplo@dominio.com).");
+      return;
+    }
     setSubmitting(true);
     try {
       const folioCode = generateFolioCode(5);
@@ -118,7 +128,27 @@ export default function JornadaDetailPage({ params }: { params: Promise<{ id: st
 
       // 3. Registrar el mail para detonar correos automáticos con los datos de ubicación correctos
       await addDoc(collection(db, "mails"), {
-        to: form.email || "contacto@defpotecmx.com",
+        to: form.email || getContactTargetEmail(),
+        message: {
+          subject: `[Defpotec] Confirmación de Cita - Folio: ${folioCode}`,
+          text: `Hola ${form.name}, tu cita para "${jornada?.title || 'Jornada Visual'}" ha sido registrada. Código de Folio: ${folioCode}`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 12px; background-color: #ffffff;">
+              <div style="border-bottom: 3px solid #006828; padding-bottom: 12px; margin-bottom: 20px;">
+                <h2 style="color: #006828; margin: 0;">DEFPOTEC MX - Confirmación de Cita</h2>
+              </div>
+              <p style="font-size: 15px; color: #333;">Hola <strong>${form.name}</strong>,</p>
+              <p style="font-size: 14px; color: #555;">Tu cita ha sido agendada con éxito. Presenta tu código de folio al llegar a la consulta:</p>
+              <div style="background-color: #f0fdf4; border: 2px dashed #006828; padding: 15px; text-align: center; border-radius: 10px; margin: 20px 0;">
+                <span style="font-size: 12px; color: #666; font-weight: bold; display: block; margin-bottom: 4px;">CÓDIGO DE FOLIO</span>
+                <span style="font-size: 28px; font-weight: 900; color: #006828; font-family: monospace; letter-spacing: 4px;">${folioCode}</span>
+              </div>
+              <p style="font-size: 14px; color: #333;"><strong>Campaña:</strong> ${jornada?.title || ""}</p>
+              <p style="font-size: 14px; color: #333;"><strong>Ubicación:</strong> ${jornada?.address || jornada?.place || jornada?.state || ""}</p>
+              <p style="font-size: 14px; color: #333;"><strong>Fecha:</strong> ${jornada?.date || ""}</p>
+            </div>
+          `,
+        },
         template: {
           name: 'Folio',
           data: {
