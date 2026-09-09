@@ -33,27 +33,39 @@ export default function Home() {
           {/* Left Text */}
           <div className="flex flex-col gap-6 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#006828]/40 bg-[#006828]/10 w-max text-sm text-[#4ade80] backdrop-blur-md">
-              Visión 20/20 al alcance de tus ojos
+              Salud Visual para Empresas y Comunidades
             </div>
             
-            <h2 className="text-5xl md:text-7xl font-extrabold leading-tight tracking-tight drop-shadow-md">
-              Claridad <br />
-              <span className="text-[#a7f3d0]">Absoluta</span> para tu Vida
+            <h2 className="text-4xl sm:text-5xl md:text-6xl font-extrabold leading-tight tracking-tight drop-shadow-md">
+              ¿Y tú cómo ves? <br />
+              <span className="text-[#a7f3d0]">¡Con DEFPOTEC MX hoy sí ves bien!</span>
             </h2>
             
             <p className="text-lg text-slate-300 leading-relaxed mt-4 max-w-xl drop-shadow-md">
               En <strong className="text-white">DEFPOTEC MX</strong> redefinimos tu forma de ver el mundo. Inspirados en la precisión científica de los exámenes visuales, creamos soluciones oftálmicas premium con la calidez y el compromiso que mereces.
             </p>
+
+            {/* Gran Botón de Citas directo */}
+            <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full">
+              <a
+                href="#agendar-cita"
+                className="inline-flex items-center justify-center gap-2 sm:gap-3 px-5 py-4 sm:px-8 sm:py-5 text-base sm:text-lg md:text-xl font-extrabold text-white bg-[#006828] hover:bg-[#00501f] border-2 border-[#4ade80] rounded-2xl shadow-[0_0_35px_rgba(0,104,40,0.6)] transition-all transform hover:scale-[1.03] active:scale-[0.98] text-center cursor-pointer w-full sm:w-auto"
+              >
+                <span className="text-xl sm:text-2xl animate-bounce shrink-0">👉</span>
+                <span className="tracking-wide">AGENDAR EXAMEN DE LA VISTA</span>
+                <span className="text-lg sm:text-xl shrink-0">📅</span>
+              </a>
+            </div>
           </div>
 
         </div>
       </main>
 
-      {/* Sección CTA para Empresas / Escuelas */}
-      <OrganizeCampaignSection />
-
-      {/* Sección de Próximas Campañas */}
+      {/* Sección de Agendar Citas en Próximas Campañas (Ubicada inmediatamente después del Hero) */}
       <CampaignsSection />
+
+      {/* Sección CTA para Empresas */}
+      <OrganizeCampaignSection />
 
     </div>
   );

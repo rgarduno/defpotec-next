@@ -83,7 +83,7 @@ export default function TerminosPage() {
               Para cualquier duda, aclaración o consulta referente a nuestras políticas o servicios de salud visual, por favor comuníquese a través de nuestros canales oficiales:
             </p>
             <div className="bg-[#0a0a0a] border border-white/10 rounded-xl p-4 text-xs text-slate-400 flex flex-col gap-2">
-              <p><strong className="text-white">Atención Telefónica:</strong> 55 8995 0935 / Celular: 55 2897 3384</p>
+              <p><strong className="text-white">Atención Telefónica / WhatsApp:</strong> 55 2897 3384</p>
               <p><strong className="text-white">Correo Electrónico:</strong> <a href="mailto:contacto@defpotecmx.com" className="text-[#4ade80] underline">contacto@defpotecmx.com</a></p>
             </div>
           </section>

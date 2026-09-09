@@ -141,8 +141,8 @@ export default function CampaignModal({ isOpen, onClose, campaign }: CampaignMod
                     </option>
                   ))}
                   {dbUsers.length === 0 && (
-                    <option value="Guillermo Alfredo Osornio García">
-                      Guillermo Alfredo Osornio García (Predeterminado)
+                    <option value="Lic. Opt. Guillermo Osornio">
+                      Lic. Opt. Guillermo Osornio (Predeterminado)
                     </option>
                   )}
                 </select>

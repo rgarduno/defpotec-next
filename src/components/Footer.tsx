@@ -48,12 +48,12 @@ export default function Footer() {
             <div className="h-1 w-full bg-[#9B0000]" />
           </Link>
           <p className="text-sm text-slate-500 leading-relaxed mt-2">
-            Llevando salud visual de alta calidad y precisión clínica directamente a tu empresa, escuela o comunidad. Tu visión es nuestra pasión.
+            Llevando salud visual de alta calidad y precisión clínica directamente a tu empresa o comunidad. Tu visión es nuestra pasión.
           </p>
           {/* Social Links */}
           <div className="flex gap-3 mt-2">
             <a 
-              href="https://facebook.com/defpotecmx/" 
+              href="https://www.facebook.com/DefpotecMxJornadas" 
               target="_blank" 
               rel="noreferrer" 
               className="w-9 h-9 rounded-full bg-white/5 hover:bg-[#006828] text-slate-400 hover:text-white flex items-center justify-center transition-colors"
@@ -75,7 +75,7 @@ export default function Footer() {
               </svg>
             </a>
             <a 
-              href="https://wa.me/5589950935" 
+              href="https://wa.me/525528973384" 
               target="_blank" 
               rel="noreferrer" 
               className="w-9 h-9 rounded-full bg-white/5 hover:bg-[#006828] text-slate-400 hover:text-white flex items-center justify-center transition-colors"
@@ -117,12 +117,8 @@ export default function Footer() {
               <span>Atenas #1 Int.1, Col. San Álvaro, Azcapotzalco, CDMX</span>
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-base shrink-0">📞</span>
-              <a href="tel:+525589950935" className="hover:text-white transition-colors">Oficina: 55 8995 0935</a>
-            </li>
-            <li className="flex items-center gap-2">
               <span className="text-base shrink-0">📱</span>
-              <a href="tel:+525528973384" className="hover:text-white transition-colors">Celular: 55 2897 3384</a>
+              <a href="tel:+525528973384" className="hover:text-white transition-colors">Teléfono / WhatsApp: 55 2897 3384</a>
             </li>
             <li className="flex items-center gap-2">
               <span className="text-base shrink-0">✉️</span>
@@ -140,12 +136,8 @@ export default function Footer() {
                 <span>Lunes - Viernes:</span>
                 <span className="text-slate-300 font-medium">9:00 - 18:00</span>
               </div>
-              <div className="flex justify-between border-b border-white/5 pb-1">
-                <span>Sábado:</span>
-                <span className="text-slate-300 font-medium">10:00 - 14:00</span>
-              </div>
               <div className="flex justify-between">
-                <span>Domingo:</span>
+                <span>Sábado - Domingo:</span>
                 <span className="text-slate-400">Cerrado</span>
               </div>
             </div>

@@ -22,7 +22,7 @@ const services = [
     tag: "Campaña Móvil",
     title: "Revisión Visual a Domicilio",
     description:
-      "Llevamos nuestra unidad de diagnóstico directamente a tu empresa, escuela o comunidad. Sin costo de traslado, con todo el equipo necesario para atender a tu equipo.",
+      "Llevamos nuestra unidad de diagnóstico directamente a tu empresa o comunidad. Sin costo de traslado, con todo el equipo necesario para atender a tu equipo.",
     features: ["Sin costo de traslado", "Equipo completo", "Atención en sitio"],
     color: "from-blue-900/20 to-transparent",
     border: "border-blue-500/20",
@@ -78,7 +78,7 @@ const testimonials = [
   {
     name: "Laura M.",
     role: "Directora de RRHH",
-    company: "Empresa manufacturera",
+    company: "Empresa Manufacturera",
     text: "Organizamos una campaña visual para nuestros 120 colaboradores. El equipo de DEFPOTEC fue increíblemente profesional, puntual y eficiente. ¡Lo recomiendo totalmente!",
     rating: 5,
     initials: "LM",
@@ -96,8 +96,8 @@ const testimonials = [
   {
     name: "Sofía R.",
     role: "Coordinadora de Bienestar",
-    company: "Centro educativo",
-    text: "La campaña en nuestra escuela fue todo un éxito. Los niños se emocionaron y los padres quedaron muy satisfechos con los resultados y la atención del personal.",
+    company: "Empresa Corporativa",
+    text: "La campaña en nuestra empresa fue todo un éxito. Los colaboradores quedaron muy satisfechos con los resultados y la atención del personal.",
     rating: 5,
     initials: "SR",
     color: "bg-purple-600",

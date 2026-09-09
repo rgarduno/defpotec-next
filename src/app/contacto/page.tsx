@@ -23,8 +23,8 @@ const contactCards = [
     icon: "📞",
     title: "Teléfono",
     subtitle: "Contáctanos 24/7",
-    lines: ["Oficina: 55 8995 0935", "Celular: 55 2897 3384"],
-    href: "tel:+5589950935",
+    lines: ["Teléfono / WhatsApp: 55 2897 3384"],
+    href: "tel:+525528973384",
     color: "from-[#006828]/20 to-[#006828]/5",
     border: "border-[#006828]/30",
   },
@@ -315,7 +315,7 @@ export default function ContactPage() {
 
             {/* WhatsApp CTA */}
             <a
-              href="https://wa.me/5589950935?text=Hola%20Defpotec%2C%20quiero%20m%C3%A1s%20informaci%C3%B3n"
+              href="https://wa.me/525528973384?text=Hola%20Defpotec%2C%20quiero%20m%C3%A1s%20informaci%C3%B3n"
               target="_blank"
               rel="noreferrer"
               className="flex items-center gap-4 p-6 rounded-2xl bg-[#006828]/10 border border-[#006828]/30 hover:bg-[#006828]/20 transition-colors group"
@@ -325,7 +325,7 @@ export default function ContactPage() {
               </div>
               <div>
                 <p className="font-bold text-white text-lg">Escríbenos por WhatsApp</p>
-                <p className="text-slate-400 text-sm">Respuesta inmediata · 55 8995 0935</p>
+                <p className="text-slate-400 text-sm">Respuesta inmediata · 55 2897 3384</p>
               </div>
               <svg className="ml-auto text-[#4ade80] opacity-0 group-hover:opacity-100 transition-opacity" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -342,12 +342,8 @@ export default function ContactPage() {
                   <span>Lunes – Viernes</span>
                   <span className="text-white font-medium">9:00 – 18:00</span>
                 </div>
-                <div className="flex justify-between text-slate-300">
-                  <span>Sábado</span>
-                  <span className="text-white font-medium">10:00 – 14:00</span>
-                </div>
                 <div className="flex justify-between text-slate-400">
-                  <span>Domingo</span>
+                  <span>Sábado – Domingo</span>
                   <span>Cerrado</span>
                 </div>
               </div>

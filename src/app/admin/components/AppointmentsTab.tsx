@@ -23,6 +23,25 @@ import toast from "react-hot-toast";
 import { formatDateStr } from "../../../utils/dateFormatter";
 import { exportFoliosToCsv } from "@/utils/exportToCsv";
 
+function formatAppointmentTime(folio: Folio): string {
+  if (folio.hour && folio.hour.trim()) {
+    return folio.hour;
+  }
+  if (folio.createdAt) {
+    try {
+      const date = typeof folio.createdAt.toDate === "function" 
+        ? folio.createdAt.toDate() 
+        : new Date(folio.createdAt);
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: true });
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+  return "Sin hora";
+}
+
 const PAGE_SIZE = 10;
 
 export default function AppointmentsTab() {
@@ -289,6 +308,9 @@ export default function AppointmentsTab() {
                     <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSort("code")}>
                       Folio / Status <SortIcon active={sortConfig?.key === "code"} direction={sortConfig?.direction || null} />
                     </th>
+                    <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSort("hour")}>
+                      Hora Cita <SortIcon active={sortConfig?.key === "hour"} direction={sortConfig?.direction || null} />
+                    </th>
                     <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSort("name")}>
                       Paciente <SortIcon active={sortConfig?.key === "name"} direction={sortConfig?.direction || null} />
                     </th>
@@ -327,6 +349,12 @@ export default function AppointmentsTab() {
                               : "bg-white/5 text-slate-500"
                           }`}>
                             {folio.active ? "Activo" : "Completado"}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-xs font-bold text-slate-200 whitespace-nowrap">
+                            <span>🕐</span>
+                            <span>{formatAppointmentTime(folio)}</span>
                           </span>
                         </td>
                         <td className="p-4 font-semibold text-white">{folio.name}</td>

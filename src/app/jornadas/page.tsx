@@ -52,14 +52,15 @@ export default function JornadasPage() {
       {/* Hero de la sección */}
       <div className="relative overflow-hidden py-20 px-6 text-center">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-[#006828]/15 rounded-full blur-[100px] pointer-events-none" />
-        <p className="text-[#006828] font-bold tracking-[0.2em] uppercase text-sm mb-4">
-          Revisiones Visuales Móviles
-        </p>
-        <h1 className="text-4xl md:text-6xl font-extrabold mb-6">
-          Nuestras Próximas Campañas
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#006828]/50 bg-[#006828]/20 text-[#4ade80] text-xs md:text-sm font-bold uppercase tracking-wider mb-4 shadow-[0_0_15px_rgba(0,104,40,0.3)]">
+          <span>📅</span>
+          <span>Agendar Examen Visual</span>
+        </div>
+        <h1 className="text-4xl md:text-6xl font-extrabold mb-6 text-white">
+          Agende su Examen de la Vista
         </h1>
-        <p className="text-slate-400 text-lg max-w-2xl mx-auto">
-          Entérate de las próximas locaciones donde instalaremos nuestras unidades de diagnóstico y agenda tu cita con anticipación.
+        <p className="text-slate-300 text-lg max-w-2xl mx-auto leading-relaxed">
+          Haga clic en la locación más cercana a usted a continuación para elegir su horario y obtener su folio de confirmación.
         </p>
       </div>
 
@@ -139,15 +140,18 @@ export default function JornadasPage() {
                         </div>
                         <div className="flex items-center gap-2 text-xs opacity-75">
                           <span>👤</span>
-                          <span className="truncate">{jornada.author}</span>
+                          <span className="truncate">
+                            {jornada.author === "Guillermo Alfredo Osornio García" ? "Lic. Opt. Guillermo Osornio" : jornada.author}
+                          </span>
                         </div>
                       </div>
 
-                      <div className="mt-5 flex items-center gap-2 text-[#4ade80] text-sm font-semibold border-t border-white/5 pt-4">
-                        Registrar mi lugar
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                        </svg>
+                      <div className="mt-5 border-t border-white/10 pt-4">
+                        <span className="w-full inline-flex items-center justify-center gap-2 px-5 py-3.5 bg-[#006828] group-hover:bg-[#00501f] text-white font-extrabold text-sm rounded-xl transition-all shadow-[0_0_15px_rgba(0,104,40,0.4)] border border-[#4ade80]/40">
+                          <span className="text-lg">👉</span>
+                          <span>AGENDAR CITA AQUÍ</span>
+                          <span>📅</span>
+                        </span>
                       </div>
                     </div>
                   </div>

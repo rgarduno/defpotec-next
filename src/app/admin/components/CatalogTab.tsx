@@ -14,9 +14,15 @@ import {
   limitToLast, 
   getDocs, 
   getCountFromServer, 
-  orderBy
+  orderBy,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  serverTimestamp
 } from "firebase/firestore";
 import { db } from "@/firebase/config";
+import toast from "react-hot-toast";
 
 const defaultStateForm = {
   name: "",
@@ -48,6 +54,13 @@ export default function CatalogTab() {
   const [editingStateId, setEditingStateId] = useState("");
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [stateToDelete, setStateToDelete] = useState<State | null>(null);
+
+  // Schedule Templates state
+  const [scheduleName, setScheduleName] = useState("");
+  const [editingScheduleId, setEditingScheduleId] = useState("");
+  const [scheduleToDelete, setScheduleToDelete] = useState<Schedule | null>(null);
+  const [isConfirmScheduleOpen, setIsConfirmScheduleOpen] = useState(false);
+  const [submittingSchedule, setSubmittingSchedule] = useState(false);
 
   // Fetch all catalogs on demand
   const fetchCatalogs = async () => {
@@ -147,6 +160,47 @@ export default function CatalogTab() {
   const cancelEditState = () => {
     setEditingStateId("");
     setStateForm(defaultStateForm);
+  };
+
+  const handleScheduleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!scheduleName.trim()) return;
+    setSubmittingSchedule(true);
+    try {
+      if (editingScheduleId) {
+        await updateDoc(doc(db, "schedules", editingScheduleId), {
+          name: scheduleName.trim(),
+        });
+        toast.success("Plantilla de horario actualizada.");
+      } else {
+        await addDoc(collection(db, "schedules"), {
+          name: scheduleName.trim(),
+          createdAt: serverTimestamp(),
+        });
+        toast.success("Nueva plantilla de horario agregada.");
+      }
+      setScheduleName("");
+      setEditingScheduleId("");
+      await fetchCatalogs();
+    } catch (err) {
+      console.error("Error saving schedule:", err);
+      toast.error("Error al guardar la plantilla de horario.");
+    } finally {
+      setSubmittingSchedule(false);
+    }
+  };
+
+  const handleScheduleDelete = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, "schedules", id));
+      toast.success("Plantilla de horario eliminada.");
+      setIsConfirmScheduleOpen(false);
+      setScheduleToDelete(null);
+      await fetchCatalogs();
+    } catch (err) {
+      console.error("Error deleting schedule:", err);
+      toast.error("Error al eliminar la plantilla de horario.");
+    }
   };
 
   return (
@@ -273,21 +327,82 @@ export default function CatalogTab() {
       <div className="bg-[#111] border border-white/10 rounded-2xl p-6 shadow-xl flex flex-col gap-6">
         <h3 className="text-lg font-bold text-white mb-2 border-b border-white/5 pb-2">Catálogos Auxiliares</h3>
 
-        <div className="p-4 rounded-xl border border-white/10 bg-white/2">
-          <h4 className="font-bold text-white mb-2 flex items-center gap-2">🕐 Plantillas de Horarios</h4>
-          <ul className="flex flex-col gap-2 text-xs text-slate-400">
+        <div className="p-5 rounded-xl border border-white/10 bg-white/2 flex flex-col gap-4">
+          <div className="flex items-center justify-between border-b border-white/5 pb-2">
+            <h4 className="font-bold text-white flex items-center gap-2">
+              🕐 Plantillas de Horarios ({schedules.length})
+            </h4>
+          </div>
+
+          {/* Formulario para agregar / editar plantilla de horario */}
+          <form onSubmit={handleScheduleSubmit} className="flex gap-2 items-center">
+            <input
+              type="text"
+              placeholder="Ej. 10:00 Hrs. a 18:00 Hrs."
+              value={scheduleName}
+              onChange={(e) => setScheduleName(e.target.value)}
+              className="flex-1 bg-[#0a0a0a] border border-white/10 rounded-xl px-3 py-2 text-white placeholder-slate-600 text-xs focus:outline-none focus:border-[#006828]"
+              required
+            />
+            {editingScheduleId && (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingScheduleId("");
+                  setScheduleName("");
+                }}
+                className="bg-white/5 hover:bg-white/10 text-white font-bold px-3 py-2 rounded-xl text-xs transition-colors border border-white/10 cursor-pointer"
+              >
+                Cancelar
+              </button>
+            )}
+            <button
+              type="submit"
+              disabled={submittingSchedule}
+              className="bg-[#006828] hover:bg-[#00501f] disabled:opacity-50 text-white font-bold px-4 py-2 rounded-xl text-xs transition-colors cursor-pointer whitespace-nowrap"
+            >
+              {editingScheduleId ? "Guardar" : "Agregar +"}
+            </button>
+          </form>
+
+          {/* Lista editable de plantillas de horario */}
+          <div className="flex flex-col gap-2 max-h-[220px] overflow-y-auto pr-1">
             {loading ? (
-              <li className="text-slate-500">Cargando horarios...</li>
+              <p className="text-xs text-slate-500">Cargando horarios...</p>
+            ) : schedules.length === 0 ? (
+              <p className="text-xs text-slate-500">No hay plantillas registradas. Agrega una arriba.</p>
             ) : (
               schedules.map(sch => (
-                <li key={sch.id} className="flex justify-between border-b border-white/5 pb-1">
-                  <span>{sch.name}</span>
-                  <span className="text-[#4ade80]">Activa</span>
-                </li>
+                <div key={sch.id} className="flex items-center justify-between border-b border-white/5 pb-2 pt-1 text-xs text-slate-300">
+                  <span className="font-medium text-white">{sch.name}</span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingScheduleId(sch.id);
+                        setScheduleName(sch.name);
+                      }}
+                      className="p-1.5 bg-white/5 hover:bg-[#006828] text-slate-400 hover:text-white rounded-lg transition-colors cursor-pointer"
+                      title="Editar plantilla"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setScheduleToDelete(sch);
+                        setIsConfirmScheduleOpen(true);
+                      }}
+                      className="p-1.5 bg-[#9B0000]/10 hover:bg-[#9B0000] text-[#9B0000] hover:text-white rounded-lg transition-colors cursor-pointer"
+                      title="Eliminar plantilla"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                </div>
               ))
             )}
-            {!loading && schedules.length === 0 && <li>Predeterminado: 10:00 Hrs. a 18:00 Hrs.</li>}
-          </ul>
+          </div>
         </div>
 
         <div className="p-4 rounded-xl border border-white/10 bg-white/2 flex flex-col justify-between min-h-[220px]">
@@ -358,6 +473,18 @@ export default function CatalogTab() {
             onConfirm={() => handleDeleteState(stateToDelete.id)}
             title="Eliminar Estado"
             message={`¿Deseas eliminar el estado "${stateToDelete.name}" del catálogo permanentemente?`}
+          />
+        )}
+        {isConfirmScheduleOpen && scheduleToDelete && (
+          <ConfirmModal
+            isOpen={isConfirmScheduleOpen}
+            onClose={() => {
+              setIsConfirmScheduleOpen(false);
+              setScheduleToDelete(null);
+            }}
+            onConfirm={() => handleScheduleDelete(scheduleToDelete.id)}
+            title="Eliminar Plantilla de Horario"
+            message={`¿Deseas eliminar la plantilla de horario "${scheduleToDelete.name}" permanentemente?`}
           />
         )}
       </AnimatePresence>

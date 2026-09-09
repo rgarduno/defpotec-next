@@ -78,7 +78,7 @@ export default function PrivacidadPage() {
             </p>
             <div className="bg-[#0a0a0a] border border-white/10 rounded-xl p-4 text-xs text-slate-400 flex flex-col gap-2">
               <p><strong className="text-white">¿Cómo ejercer sus Derechos ARCO?</strong></p>
-              <p>Envíe una solicitud por correo electrónico a: <a href="mailto:contacto@defpotecmx.com" className="text-[#4ade80] underline">contacto@defpotecmx.com</a> o comuníquese al teléfono <span className="text-white">55 8995 0935</span> indicando su nombre completo y el derecho que desea ejercer.</p>
+              <p>Envíe una solicitud por correo electrónico a: <a href="mailto:contacto@defpotecmx.com" className="text-[#4ade80] underline">contacto@defpotecmx.com</a> o comuníquese al teléfono <span className="text-white">55 2897 3384</span> indicando su nombre completo y el derecho que desea ejercer.</p>
             </div>
           </section>
 

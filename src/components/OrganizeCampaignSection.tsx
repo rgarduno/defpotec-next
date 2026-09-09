@@ -13,7 +13,7 @@ export default function OrganizeCampaignSection() {
           <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-[#006828] via-[#eab308] to-[#9B0000]" />
 
           <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight max-w-4xl">
-            ¿Quieres Organizar una Campaña Visual en tu Empresa o Escuela?
+            ¿Quieres Organizar una Campaña Visual en tu Empresa?
           </h2>
           
           <p className="text-slate-400 text-lg max-w-3xl mb-10 leading-relaxed">

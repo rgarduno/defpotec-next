@@ -16,6 +16,25 @@ interface PatientsModalProps {
   campaign: DayTrip | null;
 }
 
+function formatAppointmentTime(folio: Folio): string {
+  if (folio.hour && folio.hour.trim()) {
+    return folio.hour;
+  }
+  if (folio.createdAt) {
+    try {
+      const date = typeof folio.createdAt.toDate === "function" 
+        ? folio.createdAt.toDate() 
+        : new Date(folio.createdAt);
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', hour12: true });
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+  return "Sin hora";
+}
+
 export default function PatientsModal({ isOpen, onClose, campaign }: PatientsModalProps) {
   const { handleDeleteFolio, refreshTrigger } = useAdmin();
   const [patients, setPatients] = useState<Folio[]>([]);
@@ -64,7 +83,7 @@ export default function PatientsModal({ isOpen, onClose, campaign }: PatientsMod
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-[#161616] border border-white/10 w-full max-w-4xl rounded-3xl overflow-hidden shadow-2xl relative flex flex-col max-h-[85vh]"
+        className="bg-[#161616] border border-white/10 w-full max-w-5xl rounded-3xl overflow-hidden shadow-2xl relative flex flex-col max-h-[85vh]"
       >
         <div className="absolute top-0 left-0 w-full h-1 bg-[#006828]" />
         
@@ -104,6 +123,9 @@ export default function PatientsModal({ isOpen, onClose, campaign }: PatientsMod
                       <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSort("code")}>
                         Folio <SortIcon active={sortConfig?.key === "code"} direction={sortConfig?.direction || null} />
                       </th>
+                      <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSort("hour")}>
+                        Hora Cita <SortIcon active={sortConfig?.key === "hour"} direction={sortConfig?.direction || null} />
+                      </th>
                       <th className="p-4 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => requestSort("name")}>
                         Paciente <SortIcon active={sortConfig?.key === "name"} direction={sortConfig?.direction || null} />
                       </th>
@@ -128,6 +150,12 @@ export default function PatientsModal({ isOpen, onClose, campaign }: PatientsMod
                         <td className="p-4">
                           <span className="font-mono text-base font-black text-[#4ade80] tracking-wider select-all">
                             {folio.code || folio.id}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-xs font-bold text-slate-200 whitespace-nowrap">
+                            <span>🕐</span>
+                            <span>{formatAppointmentTime(folio)}</span>
                           </span>
                         </td>
                         <td className="p-4 font-semibold text-white">{folio.name}</td>

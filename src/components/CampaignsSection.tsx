@@ -194,7 +194,7 @@ export default function CampaignsSection() {
   const selectedCampaign = campaigns.find(c => c.uuid === selectedCampaignId);
 
   return (
-    <section className="w-full bg-[#0a0a0a] text-white py-24 relative overflow-hidden">
+    <section id="agendar-cita" className="w-full bg-[#0a0a0a] text-white py-24 relative overflow-hidden scroll-mt-20">
       <Toaster
         position="top-right"
         toastOptions={{
@@ -217,10 +217,15 @@ export default function CampaignsSection() {
         
         {/* Header de la sección */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <p className="text-[#006828] font-bold tracking-[0.2em] uppercase text-sm mb-4">Revisiones visuales móviles</p>
-          <h2 className="text-4xl md:text-5xl font-extrabold mb-6">Nuestras Próximas Campañas</h2>
-          <p className="text-slate-400 text-lg">
-            Entérate de las próximas locaciones donde instalaremos nuestras unidades de diagnóstico y agenda tu cita con anticipación.
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#006828]/50 bg-[#006828]/20 text-[#4ade80] text-xs md:text-sm font-bold uppercase tracking-wider mb-4 shadow-[0_0_15px_rgba(0,104,40,0.3)]">
+            <span>📅</span>
+            <span>Agendar Examen Visual</span>
+          </div>
+          <h2 className="text-4xl md:text-5xl font-extrabold mb-6 text-white">
+            Agenda tu Cita en 1 Minuto
+          </h2>
+          <p className="text-slate-300 text-lg leading-relaxed">
+            Selecciona la locación de la campaña más cercana en el formulario y completa tus datos para asegurar tu lugar sin costo de traslado.
           </p>
         </div>
 

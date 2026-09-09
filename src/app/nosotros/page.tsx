@@ -96,7 +96,7 @@ export default function NosotrosPage() {
               DEFPOTEC MX nació con el firme compromiso de hacer que la salud visual de alta calidad sea verdaderamente accesible para todos. A lo largo de los años, nos percatamos de que gran parte de la población no tiene un acceso fácil o frecuente a revisiones de la vista profesionales, lo que impacta directamente en su calidad de vida y desempeño diario.
             </p>
             <p className="text-slate-400 leading-relaxed">
-              Con esto en mente, desarrollamos un modelo innovador de **jornadas móviles de salud visual**, llevando equipamiento clínico avanzado directamente a empresas, escuelas y comunidades de todo el país. Creemos que una visión clara no debe ser un lujo, sino un derecho fundamental que transforma vidas y abre nuevas oportunidades.
+              Con esto en mente, desarrollamos un modelo innovador de <strong>jornadas móviles de salud visual</strong>, llevando equipamiento clínico avanzado directamente a empresas y comunidades de todo el país. Creemos que una visión clara no debe ser un lujo, sino un derecho fundamental que transforma vidas y abre nuevas oportunidades.
             </p>
           </motion.div>
         </div>
@@ -206,7 +206,7 @@ export default function NosotrosPage() {
                 {/* Redes Sociales */}
                 <div className="flex justify-center gap-4 border-t border-white/10 pt-4">
                   <a 
-                    href="https://www.facebook.com/defpotecmx/" 
+                    href="https://www.facebook.com/DefpotecMxJornadas" 
                     target="_blank" 
                     rel="noreferrer"
                     className="w-10 h-10 rounded-full bg-white/5 hover:bg-[#006828] text-slate-400 hover:text-white flex items-center justify-center transition-colors"
@@ -242,7 +242,7 @@ export default function NosotrosPage() {
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#006828] via-[#eab308] to-[#9B0000] rounded-t-3xl" />
             <h2 className="text-3xl md:text-4xl font-bold mb-4">¿Quieres organizar una campaña visual?</h2>
             <p className="text-slate-400 text-lg max-w-xl mx-auto mb-8">
-              Llevamos nuestros servicios profesionales a tu empresa, escuela o comunidad.
+              Llevamos nuestros servicios profesionales a tu empresa o comunidad.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link

@@ -277,19 +277,12 @@ export default function JornadaDetailPage({ params }: { params: Promise<{ id: st
                   <span className="text-2xl">👤</span>
                   <div>
                     <p className="text-xs text-slate-500 uppercase tracking-widest">Responsable</p>
-                    <p className="text-white font-semibold">{jornada.author}</p>
+                    <p className="text-white font-semibold">
+                      {jornada.author === "Guillermo Alfredo Osornio García" ? "Lic. Opt. Guillermo Osornio" : jornada.author}
+                    </p>
                   </div>
                 </div>
               </div>
- 
-              {/* Imagen */}
-              {jornada.picture && (
-                <div className="rounded-2xl overflow-hidden border border-white/10 shadow-lg relative group">
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={jornada.picture} alt={jornada.title} className="w-full object-cover max-h-80 group-hover:scale-[1.02] transition-transform duration-500" />
-                </div>
-              )}
             </motion.div>
 
             {/* Columna derecha: Formulario */}
@@ -430,7 +423,7 @@ export default function JornadaDetailPage({ params }: { params: Promise<{ id: st
                         <button
                           type="submit"
                           disabled={submitting}
-                          className="mt-2 w-full bg-[#006828] hover:bg-[#00501f] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl transition-colors shadow-[0_0_20px_rgba(0,104,40,0.3)] flex items-center justify-center gap-2"
+                          className="mt-2 w-full bg-[#006828] hover:bg-[#00501f] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl transition-colors shadow-[0_0_20px_rgba(0,104,40,0.3)] flex items-center justify-center gap-2 cursor-pointer"
                         >
                           {submitting ? (
                             <>
@@ -447,6 +440,15 @@ export default function JornadaDetailPage({ params }: { params: Promise<{ id: st
             </motion.div>
 
           </div>
+
+          {/* Imagen de la campaña (Ubicada al final, después de la información y del formulario) */}
+          {jornada.picture && (
+            <div className="mt-12 rounded-3xl overflow-hidden border border-white/10 shadow-2xl relative group max-w-4xl mx-auto">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={jornada.picture} alt={jornada.title} className="w-full object-cover max-h-[420px] group-hover:scale-[1.02] transition-transform duration-500" />
+            </div>
+          )}
         </div>
       )}
     </div>

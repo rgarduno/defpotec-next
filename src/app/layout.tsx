@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Defpotec - Visión Clara",
-  description: "Clínica de la visión Defpotec",
+  title: "Defpotec MX - ¿Y tú cómo ves? ¡Con Defpotec MX hoy sí ves bien!",
+  description: "Servicios optométricos de alta calidad y jornadas visuales para empresas y comunidades con Defpotec MX.",
   icons: {
     icon: [
       { url: "/icon.svg", type: "image/svg+xml" },
