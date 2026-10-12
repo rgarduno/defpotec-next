@@ -5,6 +5,8 @@ import { motion } from "framer-motion";
 import { useAdmin, DayTrip, Contact, DBUser, Schedule } from "../context/AdminContext";
 import { collection, getDocs, query, orderBy } from "firebase/firestore";
 import { db } from "@/firebase/config";
+import SearchablePlaceSelect from "./SearchablePlaceSelect";
+import TouchDatePicker from "./TouchDatePicker";
 
 interface CampaignModalProps {
   isOpen: boolean;
@@ -149,20 +151,15 @@ export default function CampaignModal({ isOpen, onClose, campaign }: CampaignMod
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-slate-400">Establecimiento (Directorio) <span className="text-[#9B0000]">*</span></label>
-                <select
-                  value={form.selectedPlaceId}
-                  onChange={e => setForm({ ...form, selectedPlaceId: e.target.value })}
-                  className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#006828] appearance-none"
+                <label className="text-xs text-slate-400">
+                  Establecimiento (Directorio) <span className="text-[#9B0000]">*</span>
+                </label>
+                <SearchablePlaceSelect
+                  contacts={contacts}
+                  selectedPlaceId={form.selectedPlaceId}
+                  onSelect={(contactId) => setForm({ ...form, selectedPlaceId: contactId })}
                   required
-                >
-                  <option value="">Selecciona lugar del directorio</option>
-                  {contacts.map(c => (
-                    <option key={c.id} value={c.id}>
-                      {c.place} ({c.selectedMunicipality}, {c.selectedState})
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
             </div>
 
@@ -194,27 +191,37 @@ export default function CampaignModal({ isOpen, onClose, campaign }: CampaignMod
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="flex flex-col gap-1">
-                <label className="text-xs text-slate-400">Fecha de Inicio <span className="text-[#9B0000]">*</span></label>
-                <input
-                  type="date"
-                  value={form.startDateStr}
-                  onChange={e => setForm({ ...form, startDateStr: e.target.value })}
-                  className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#006828]"
-                  required
-                />
-              </div>
+              <TouchDatePicker
+                label="Fecha de Inicio"
+                type="start"
+                placeholder="¿Qué día arranca la jornada?"
+                subtitle="Toca para definir la fecha de inicio"
+                value={form.startDateStr}
+                onChange={(newStart) => {
+                  if (!form.endDateStr || form.endDateStr < newStart) {
+                    setForm({ ...form, startDateStr: newStart, endDateStr: newStart });
+                  } else {
+                    setForm({ ...form, startDateStr: newStart });
+                  }
+                }}
+                required
+              />
 
-              <div className="flex flex-col gap-1">
-                <label className="text-xs text-slate-400">Fecha de Cierre <span className="text-[#9B0000]">*</span></label>
-                <input
-                  type="date"
-                  value={form.endDateStr}
-                  onChange={e => setForm({ ...form, endDateStr: e.target.value })}
-                  className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#006828]"
-                  required
-                />
-              </div>
+              <TouchDatePicker
+                label="Fecha de Cierre"
+                type="end"
+                placeholder="¿Qué día concluyen las consultas?"
+                subtitle={
+                  form.startDateStr
+                    ? "Mismo día por defecto (o extiende la fecha)"
+                    : "Primero elige el inicio o define el cierre"
+                }
+                value={form.endDateStr}
+                onChange={(newEnd) => setForm({ ...form, endDateStr: newEnd })}
+                minDate={form.startDateStr}
+                referenceStartDate={form.startDateStr}
+                required
+              />
             </div>
 
             <div className="flex gap-4 justify-end mt-4">
